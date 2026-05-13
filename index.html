@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JECS Quck Wash: The Premier Quick Wash While You Work.</title>
+    <meta
+      name="description"
+      content="JECS Quick Wash delivers fast, convenient on-site mobile car wash service at workplaces and high-traffic parking locations."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="index.html">JECS Quick Wash</a>
+        <nav aria-label="Primary">
+          <ul class="nav">
+            <li><a href="#services">Services</a></li>
+            <li><a href="#locations">Locations</a></li>
+            <li><a href="#request">Request Wash</a></li>
+            <li><a href="#ops">Operations Model</a></li>
+            <li><a href="about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero section">
+        <div class="container hero-grid">
+          <div>
+            <p class="pill">Quick Wash While You Work</p>
+            <h1>Fast. Convenient. On-site car wash where your day already happens.</h1>
+            <p class="lead">
+              We come to you — offices, parking lots, and events. Submit your wash request and our routing team batches stops by location for faster service.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#request">Request a Wash</a>
+              <a class="btn btn-secondary" href="about.html">Our Story</a>
+            </div>
+          </div>
+          <aside class="card hero-card">
+            <img class="hero-photo" src="assets/656D26D6-29F5-40B1-9E49-463421B80394.png" alt="JECS Quick Wash mobile wash on-site" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <div class="hero-fallback" style="display:none">Add your home image as <code>assets/home-page.png</code>.</div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="services" class="section section-alt">
+        <div class="container">
+          <h2>Service Options</h2>
+          <div class="cards">
+            <article class="card"><h3>Quick Wash</h3><p>Exterior rinse, soap wash, dry, and tire finish.</p></article>
+            <article class="card"><h3>Wash + Vacuum</h3><p>Quick Wash plus interior vacuum and wipe down.</p></article>
+            <article class="card"><h3>Fleet Service</h3><p>Volume pricing and scheduled on-site service for teams.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="locations" class="section">
+        <div class="container two-col">
+          <div>
+            <h2>Where We Operate</h2>
+            <p>JECS Quick Wash prioritizes workplaces and high-traffic parking areas to maximize route efficiency and reduce customer wait times.</p>
+          </div>
+          <div class="card">
+            <h3>Coverage Focus</h3>
+            <ul>
+              <li>Office campuses</li>
+              <li>Retail and commuter lots</li>
+              <li>Event and venue parking areas</li>
+              <li>Fleet depots</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="request" class="section section-alt">
+        <div class="container two-col">
+          <div>
+            <h2>Request Wash</h2>
+            <p>Enter your contact and location details. We capture address + GPS coordinates for route planning and queue management.</p>
+          </div>
+
+          <form id="customerForm" class="form" action="https://formspree.io/f/xqewgnbb" method="POST" novalidate>
+            <input type="text" name="name" placeholder="Full Name" required />
+            <input type="email" name="email" placeholder="Email" required />
+            <input type="tel" id="phoneInput" name="phone" placeholder="Phone Number" required />
+
+            <input id="address" type="text" name="address" placeholder="Workplace or Parking Location" required />
+
+            <select name="service" required>
+              <option value="quick-wash">Quick Wash</option>
+              <option value="wash-vacuum">Wash + Vacuum</option>
+              <option value="fleet">Fleet Service</option>
+            </select>
+
+            <textarea name="notes" id="notes" rows="4" placeholder="Vehicle details or instructions"></textarea>
+
+            <input type="hidden" id="lat" name="latitude" />
+            <input type="hidden" id="lng" name="longitude" />
+            <input type="hidden" id="placeId" name="place_id" />
+            <input type="hidden" id="serviceRequestId" name="service_request_id" />
+            <input type="hidden" id="calendlyUrl" name="calendly_url" value="https://calendly.com/aarmstrong1234/30min" />
+
+
+
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAADOPeJJPfrSYL0Wg"></div>
+
+            <button class="btn btn-primary" type="submit">Request My Wash</button>
+            <p id="locationHint" class="hint">Allow location access for faster dispatch accuracy.</p>
+            <p id="formMessage" class="hint" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="ops" class="section">
+        <div class="container two-col">
+          <div>
+            <h2>Operations Model</h2>
+            <p>Form entries are designed to flow into a spatial database so JECS staff can batch nearby requests, assign routes, and track service coverage.</p>
+          </div>
+          <div class="card">
+            <h3>Data Flow</h3>
+            <div class="pipeline">
+              <span>Request Form</span>
+              <span>Address + GPS</span>
+              <span>Queue + Routing</span>
+              <span>On-site Wash</span>
+              <span>Repeat Service</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-wrap">
+        <p>© <span id="year"></span> <span id="businessName">JECS Quick Wash</span></p>
+      </div>
+    </footer>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZAA619g3JlruK77Lfm8vlopcR76vRGg&libraries=places&callback=initGooglePlaces" async defer></script>
+    <script src="script.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script type="module" src="supabase-submit.js"></script>
+  </body>
+</html>
