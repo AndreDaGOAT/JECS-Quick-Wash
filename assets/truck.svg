@@ -1,0 +1,18 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Luxury truck</title>
+  <desc id="desc">Stylized clean luxury truck.</desc>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <ellipse cx="370" cy="650" rx="102" ry="102" fill="#161616"/>
+  <ellipse cx="875" cy="650" rx="102" ry="102" fill="#161616"/>
+  <ellipse cx="370" cy="650" rx="50" ry="50" fill="#D7B67A"/>
+  <ellipse cx="875" cy="650" rx="50" ry="50" fill="#D7B67A"/>
+  <rect x="154" y="372" width="516" height="192" rx="24" fill="#101A29" stroke="#D7B67A" stroke-width="8"/>
+  <path d="M670 564H1045C1060 564 1073 551 1073 536V424C1073 411 1066 400 1054 395L935 336C916 327 895 323 875 323H742C701 323 670 354 670 395V564Z" fill="#101A29" stroke="#D7B67A" stroke-width="8"/>
+  <rect x="734" y="366" width="225" height="92" rx="12" fill="#2B3F57"/>
+  <defs>
+    <linearGradient id="bg" x1="600" y1="0" x2="600" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A2231"/>
+      <stop offset="1" stop-color="#07080C"/>
+    </linearGradient>
+  </defs>
+</svg>
