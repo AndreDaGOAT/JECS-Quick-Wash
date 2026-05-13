@@ -1,0 +1,17 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Luxury SUV</title>
+  <desc id="desc">Stylized clean luxury SUV.</desc>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <ellipse cx="385" cy="648" rx="100" ry="100" fill="#161616"/>
+  <ellipse cx="866" cy="648" rx="100" ry="100" fill="#161616"/>
+  <ellipse cx="385" cy="648" rx="49" ry="49" fill="#D7B67A"/>
+  <ellipse cx="866" cy="648" rx="49" ry="49" fill="#D7B67A"/>
+  <path d="M196 569H1010C1042 569 1069 542 1069 510V453C1069 432 1059 413 1042 402L887 301C866 287 841 279 815 279H446C418 279 391 289 368 307L224 420C206 435 196 457 196 480V546C196 559 186 569 173 569H196Z" fill="#101A29" stroke="#D7B67A" stroke-width="8"/>
+  <rect x="411" y="336" width="441" height="122" rx="14" fill="#2B3F57"/>
+  <defs>
+    <linearGradient id="bg" x1="600" y1="0" x2="600" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A2231"/>
+      <stop offset="1" stop-color="#07080C"/>
+    </linearGradient>
+  </defs>
+</svg>
