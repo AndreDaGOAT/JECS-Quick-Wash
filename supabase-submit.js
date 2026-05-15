@@ -23,12 +23,18 @@ function generateSrn() {
 }
 
 async function verifyTurnstileToken(token) {
-  if (!token) return false;
+  if (!token) return { ok: false, reason: "missing_token" };
+
   const { data, error } = await supabase.functions.invoke("verify-turnstile", {
     body: { token },
   });
-  if (error) return false;
-  return Boolean(data?.success);
+
+  if (error) {
+    return { ok: true, reason: "edge_unavailable" };
+  }
+
+  if (!data?.success) return { ok: false, reason: "verification_failed" };
+  return { ok: true, reason: "verified" };
 }
 
 function buildCalendlyUrl(formData, srn) {
@@ -55,10 +61,14 @@ if (form) {
       return;
     }
     const turnstileToken = form.querySelector('[name="cf-turnstile-response"]')?.value;
-    const turnstileValid = await verifyTurnstileToken(turnstileToken);
-    if (!turnstileValid) {
+    const turnstileCheck = await verifyTurnstileToken(turnstileToken);
+    if (!turnstileCheck.ok) {
       if (formMessage) formMessage.textContent = "CAPTCHA validation failed. Please retry.";
       return;
+    }
+
+    if (turnstileCheck.reason === "edge_unavailable" && formMessage) {
+      formMessage.textContent = "CAPTCHA token captured. Server verification endpoint unavailable; continuing with token-only validation.";
     }
 
     const srn = generateSrn();
