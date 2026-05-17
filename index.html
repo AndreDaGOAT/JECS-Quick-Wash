@@ -3,153 +3,427 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JECS Quick Wash | Quick Wash While You Work</title>
-    <meta
-      name="description"
-      content="JECS Quick Wash delivers fast, convenient on-site mobile car wash service at workplaces and high-traffic parking locations."
-    />
+    <title>JECS Quick Wash | Luxury Mobile Car Wash</title>
+    <meta name="description" content="JECS Quick Wash — premium mobile car wash delivered to your workplace or parking location. Book your spot, we come to you." />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="site-header">
+
+    <!-- ░░ HEADER ░░ -->
+    <header class="site-header" id="top">
       <div class="container nav-wrap">
-        <a class="brand" href="index.html">JECS Quick Wash</a>
+        <a class="brand" href="index.html">
+          <span class="brand-jecs">JECS</span>
+          <span class="brand-sub">Quick Wash</span>
+        </a>
         <nav aria-label="Primary">
           <ul class="nav">
             <li><a href="#services">Services</a></li>
             <li><a href="#locations">Locations</a></li>
-            <li><a href="#request">Request Wash</a></li>
-            <li><a href="#ops">Operations Model</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#request" class="nav-cta">Book Now</a></li>
             <li><a href="about.html">About</a></li>
           </ul>
+          <button class="hamburger" id="menuToggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+          </button>
         </nav>
+      </div>
+      <div class="mobile-menu" id="mobileMenu">
+        <a href="#services">Services</a>
+        <a href="#locations">Locations</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#request">Book Now</a>
+        <a href="about.html">About</a>
       </div>
     </header>
 
     <main>
-      <section class="hero section">
+
+      <!-- ░░ HERO ░░ -->
+      <section class="hero">
+        <div class="hero-bg-grid"></div>
+        <div class="hero-gold-orb"></div>
         <div class="container hero-grid">
-          <div>
-            <p class="pill">Quick Wash While You Work</p>
-            <h1>Fast. Convenient. On-site car wash where your day already happens.</h1>
-            <p class="lead">
-              We come to you — offices, parking lots, and events. Submit your wash request and our routing team batches stops by location for faster service.
-            </p>
+          <div class="hero-text">
+            <p class="eyebrow">Premium Mobile Detailing</p>
+            <h1>Your Car. <em>Pristine.</em><br>Where You Already Are.</h1>
+            <p class="lead">We dispatch to offices, campuses, and parking locations — batching nearby requests for faster turnaround and unmatched convenience.</p>
             <div class="hero-actions">
-              <a class="btn btn-primary" href="#request">Request a Wash</a>
-              <a class="btn btn-secondary" href="about.html">Our Story</a>
+              <a class="btn btn-gold" href="#request">Request a Wash</a>
+              <a class="btn btn-ghost" href="#how-it-works">See How It Works</a>
+            </div>
+            <div class="trust-row">
+              <span class="trust-item">✦ Instant Confirmation</span>
+              <span class="trust-item">✦ Geo-Optimized Routes</span>
+              <span class="trust-item">✦ Luxury Service</span>
             </div>
           </div>
-          <aside class="card hero-card">
-            <img class="hero-photo" src="assets/656D26D6-29F5-40B1-9E49-463421B80394.png" alt="JECS Quick Wash mobile wash on-site" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-            <div class="hero-fallback" style="display:none">Add your home image as <code>assets/home-page.png</code>.</div>
-          </aside>
+          <div class="hero-visual">
+            <div class="hero-photo-wrap">
+              <img src="assets/656D26D6-29F5-40B1-9E49-463421B80394.png" alt="JECS Quick Wash mobile service" loading="eager" onerror="this.parentElement.classList.add('no-img')" />
+              <div class="photo-badge">
+                <span class="badge-icon">⬟</span>
+                <span>Black Excellence<br>in Every Wash</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-scroll-cue" aria-hidden="true">
+          <span>Scroll</span>
+          <div class="scroll-line"></div>
         </div>
       </section>
 
-      <section id="services" class="section section-alt">
+      <!-- ░░ SERVICES ░░ -->
+      <section id="services" class="section section-dark">
         <div class="container">
-          <h2>Service Options</h2>
-          <div class="cards">
-            <article class="card"><h3>Quick Wash</h3><p>Exterior rinse, soap wash, dry, and tire finish.</p></article>
-            <article class="card"><h3>Wash + Vacuum</h3><p>Quick Wash plus interior vacuum and wipe down.</p></article>
-            <article class="card"><h3>Fleet Service</h3><p>Volume pricing and scheduled on-site service for teams.</p></article>
+          <div class="section-header">
+            <p class="eyebrow eyebrow-gold">What We Offer</p>
+            <h2>Service Packages</h2>
+            <p class="section-sub">Premium finishes delivered to your location, on your schedule.</p>
+          </div>
+          <div class="service-grid">
+
+            <article class="service-card" data-tier="essential">
+              <div class="service-card-top">
+                <div class="service-icon">◈</div>
+                <h3>Quick Wash</h3>
+                <p class="service-tagline">Essential Clean</p>
+              </div>
+              <ul class="service-list">
+                <li>Exterior rinse &amp; soap wash</li>
+                <li>Hand dry &amp; spot-free finish</li>
+                <li>Tire &amp; wheel shine</li>
+                <li>Window wipe-down</li>
+              </ul>
+              <a href="#request" class="btn btn-gold-outline service-btn">Book Quick Wash</a>
+            </article>
+
+            <article class="service-card service-card--featured" data-tier="signature">
+              <div class="featured-label">Most Popular</div>
+              <div class="service-card-top">
+                <div class="service-icon">◆</div>
+                <h3>Wash + Vacuum</h3>
+                <p class="service-tagline">Interior + Exterior</p>
+              </div>
+              <ul class="service-list">
+                <li>Everything in Quick Wash</li>
+                <li>Full interior vacuum</li>
+                <li>Dashboard &amp; console wipe</li>
+                <li>Door jam cleaning</li>
+                <li>Air freshener service</li>
+              </ul>
+              <a href="#request" class="btn btn-gold service-btn">Book Wash + Vacuum</a>
+            </article>
+
+            <article class="service-card" data-tier="fleet">
+              <div class="service-card-top">
+                <div class="service-icon">◇</div>
+                <h3>Fleet Service</h3>
+                <p class="service-tagline">Volume &amp; Commercial</p>
+              </div>
+              <ul class="service-list">
+                <li>Scheduled on-site visits</li>
+                <li>Volume pricing available</li>
+                <li>Dedicated account manager</li>
+                <li>Custom service contracts</li>
+                <li>Fleet dispatch priority</li>
+              </ul>
+              <a href="#request" class="btn btn-gold-outline service-btn">Get Fleet Quote</a>
+            </article>
+
           </div>
         </div>
       </section>
 
-      <section id="locations" class="section">
-        <div class="container two-col">
-          <div>
-            <h2>Where We Operate</h2>
-            <p>JECS Quick Wash prioritizes workplaces and high-traffic parking areas to maximize route efficiency and reduce customer wait times.</p>
+      <!-- ░░ HOW IT WORKS ░░ -->
+      <section id="how-it-works" class="section">
+        <div class="container">
+          <div class="section-header">
+            <p class="eyebrow">Simple &amp; Seamless</p>
+            <h2>How It Works</h2>
           </div>
-          <div class="card">
-            <h3>Coverage Focus</h3>
-            <ul>
-              <li>Office campuses</li>
-              <li>Retail and commuter lots</li>
-              <li>Event and venue parking areas</li>
-              <li>Fleet depots</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section id="request" class="section section-alt">
-        <div class="container two-col">
-          <div>
-            <h2>Request Wash</h2>
-            <p>Enter your contact and location details. We capture address + GPS coordinates for route planning and queue management.</p>
-          </div>
-
-          <form id="customerForm" class="form" action="https://formspree.io/f/xqewgnbb" method="POST" novalidate>
-            <input type="text" name="name" placeholder="Full Name" required />
-            <input type="email" name="email" placeholder="Email" required />
-            <input type="tel" id="phoneInput" name="phone" placeholder="Phone Number" required />
-
-            <input id="address" type="text" name="address" placeholder="Workplace or Parking Location" required />
-
-            <select name="service" required>
-              <option value="quick-wash">Quick Wash</option>
-              <option value="wash-vacuum">Wash + Vacuum</option>
-              <option value="fleet">Fleet Service</option>
-            </select>
-
-            <textarea name="notes" id="notes" rows="4" placeholder="Vehicle details or instructions"></textarea>
-
-            <input type="hidden" id="lat" name="latitude" />
-            <input type="hidden" id="lng" name="longitude" />
-            <input type="hidden" id="placeId" name="place_id" />
-            <input type="hidden" id="serviceRequestId" name="service_request_id" />
-            <input type="hidden" id="calendlyUrl" name="calendly_url" value="https://calendly.com/aarmstrong1234/30min" />
-
-
-
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAADOPeJJPfrSYL0Wg"></div>
-
-            <button class="btn btn-primary" type="submit">Request My Wash</button>
-            <p id="locationHint" class="hint">Allow location access for faster dispatch accuracy.</p>
-            <p id="formMessage" class="hint" role="status" aria-live="polite"></p>
-          </form>
-        </div>
-      </section>
-
-      <section id="ops" class="section">
-        <div class="container two-col">
-          <div>
-            <h2>Operations Model</h2>
-            <p>Form entries are designed to flow into a spatial database so JECS staff can batch nearby requests, assign routes, and track service coverage.</p>
-          </div>
-          <div class="card">
-            <h3>Data Flow</h3>
-            <div class="pipeline">
-              <span>Request Form</span>
-              <span>Address + GPS</span>
-              <span>Queue + Routing</span>
-              <span>On-site Wash</span>
-              <span>Repeat Service</span>
+          <div class="steps-track">
+            <div class="step">
+              <div class="step-num">01</div>
+              <div class="step-body">
+                <h3>Submit Your Request</h3>
+                <p>Fill out the booking form with your location, vehicle, and preferred service. A unique Service Request Number is generated instantly.</p>
+              </div>
+            </div>
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step">
+              <div class="step-num">02</div>
+              <div class="step-body">
+                <h3>Schedule Your Slot</h3>
+                <p>You're redirected to our live calendar with your request pre-loaded. Pick a window that fits your workday — your SRN travels with you.</p>
+              </div>
+            </div>
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step">
+              <div class="step-num">03</div>
+              <div class="step-body">
+                <h3>We Come to You</h3>
+                <p>Our routing system clusters nearby appointments to minimize wait. A technician arrives at your vehicle while you stay productive.</p>
+              </div>
+            </div>
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step">
+              <div class="step-num">04</div>
+              <div class="step-body">
+                <h3>Confirm &amp; Done</h3>
+                <p>You receive a confirmation with your SRN, service details, and technician ETA. Your car, pristine — effortlessly.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      <!-- ░░ LOCATIONS ░░ -->
+      <section id="locations" class="section section-dark">
+        <div class="container two-col">
+          <div>
+            <p class="eyebrow eyebrow-gold">Where We Operate</p>
+            <h2>We Come to Your World</h2>
+            <p>JECS Quick Wash operates at workplaces and high-traffic parking areas. Our geo-clustering algorithm groups nearby requests for faster, smarter dispatch — so you wait less and get more.</p>
+            <p class="location-note">Not sure if we cover your area? Submit a request — our routing team reviews all zones and will confirm availability.</p>
+          </div>
+          <div class="location-grid">
+            <div class="location-pill">🏢 Office Campuses</div>
+            <div class="location-pill">🅿️ Retail &amp; Commuter Lots</div>
+            <div class="location-pill">🎪 Events &amp; Venues</div>
+            <div class="location-pill">🚐 Fleet Depots</div>
+            <div class="location-pill">🏨 Hotels &amp; Resorts</div>
+            <div class="location-pill">🏥 Medical Campuses</div>
+          </div>
+        </div>
+
+        <!-- Geo Intelligence Panel -->
+        <div class="container geo-panel-wrap" style="margin-top:3rem">
+          <div class="geo-panel">
+            <div class="geo-panel-icon">◉</div>
+            <div>
+              <h3>Intelligent Geographic Routing</h3>
+              <p>Our scheduling system clusters appointments by ZIP code, neighborhood, and GPS proximity — opening bonus availability windows when your area fills up. Less driving, more washing.</p>
+            </div>
+            <div class="geo-cluster-viz" aria-hidden="true">
+              <div class="cluster-dot" style="--x:20%;--y:30%"></div>
+              <div class="cluster-dot" style="--x:28%;--y:42%"></div>
+              <div class="cluster-dot" style="--x:22%;--y:55%"></div>
+              <div class="cluster-dot cluster-dot--active" style="--x:50%;--y:35%"></div>
+              <div class="cluster-dot cluster-dot--active" style="--x:58%;--y:48%"></div>
+              <div class="cluster-dot cluster-dot--active" style="--x:52%;--y:60%"></div>
+              <div class="cluster-dot" style="--x:78%;--y:25%"></div>
+              <div class="cluster-dot" style="--x:82%;--y:50%"></div>
+              <div class="cluster-ring" style="--x:54%;--y:48%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ░░ REQUEST FORM ░░ -->
+      <section id="request" class="section section-request">
+        <div class="container">
+          <div class="section-header">
+            <p class="eyebrow">Ready When You Are</p>
+            <h2>Request Your Wash</h2>
+            <p class="section-sub">Complete the form below. Your unique Service Request Number is generated instantly and travels through every step of your booking.</p>
+          </div>
+
+          <div class="form-layout">
+            <!-- SRN Preview Banner -->
+            <div class="srn-banner" id="srnBanner" style="display:none">
+              <span class="srn-label">Your Service Request Number</span>
+              <span class="srn-value" id="srnDisplay">—</span>
+              <span class="srn-note">Save this number — it tracks your booking from start to finish.</span>
+            </div>
+
+            <form id="customerForm" class="booking-form" novalidate>
+
+              <div class="form-section-label">Contact Information</div>
+              <div class="form-row-2">
+                <div class="field-wrap">
+                  <label for="name">Full Name <span class="req">*</span></label>
+                  <input type="text" id="name" name="name" placeholder="Your full name" required autocomplete="name" />
+                </div>
+                <div class="field-wrap">
+                  <label for="email">Email Address <span class="req">*</span></label>
+                  <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+                </div>
+              </div>
+              <div class="field-wrap">
+                <label for="phone">Phone Number <span class="req">*</span></label>
+                <input type="tel" id="phone" name="phone" placeholder="(615) 000-0000" required autocomplete="tel" />
+              </div>
+
+              <div class="form-divider"></div>
+              <div class="form-section-label">Location &amp; Service</div>
+
+              <div class="field-wrap">
+                <label for="address">Workplace or Parking Location <span class="req">*</span></label>
+                <input id="address" type="text" name="address" placeholder="Start typing your address…" required autocomplete="off" />
+                <p class="field-hint" id="locationHint">📍 Allow location access for faster routing accuracy.</p>
+              </div>
+
+              <div class="form-row-2">
+                <div class="field-wrap">
+                  <label for="service">Service Package <span class="req">*</span></label>
+                  <select id="service" name="service" required>
+                    <option value="" disabled selected>Select a service…</option>
+                    <option value="quick-wash">Quick Wash — Exterior</option>
+                    <option value="wash-vacuum">Wash + Vacuum — Interior + Exterior</option>
+                    <option value="fleet">Fleet Service — Volume &amp; Commercial</option>
+                  </select>
+                </div>
+                <div class="field-wrap">
+                  <label for="vehicle">Vehicle Type</label>
+                  <select id="vehicle" name="vehicle">
+                    <option value="">Select vehicle type…</option>
+                    <option value="sedan">Sedan / Coupe</option>
+                    <option value="suv">SUV / Crossover</option>
+                    <option value="truck">Truck / Full-size</option>
+                    <option value="van">Van / Minivan</option>
+                    <option value="luxury">Luxury / High-end</option>
+                    <option value="fleet-multi">Fleet (Multiple Vehicles)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-wrap">
+                <label for="notes">Vehicle Details or Special Instructions</label>
+                <textarea id="notes" name="notes" rows="4" placeholder="Color, make/model, parking spot, special requests…"></textarea>
+              </div>
+
+              <!-- Hidden fields -->
+              <input type="hidden" id="lat" name="latitude" />
+              <input type="hidden" id="lng" name="longitude" />
+              <input type="hidden" id="placeId" name="place_id" />
+              <input type="hidden" id="serviceRequestId" name="service_request_id" />
+
+              <div class="form-divider"></div>
+
+              <!-- CAPTCHA -->
+              <div class="captcha-wrap">
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAADOPeJJPfrSYL0Wg" data-theme="light"></div>
+                <p class="captcha-note">Spam protection powered by Cloudflare Turnstile — minimal friction, maximum security.</p>
+              </div>
+
+              <button class="btn btn-gold btn-submit" type="submit" id="submitBtn">
+                <span class="btn-text">Request My Wash →</span>
+                <span class="btn-loading" style="display:none">Processing…</span>
+              </button>
+
+              <p id="formMessage" class="form-status" role="status" aria-live="polite"></p>
+            </form>
+
+            <!-- Sidebar -->
+            <aside class="form-sidebar">
+              <div class="sidebar-card">
+                <h3>What Happens Next</h3>
+                <ol class="sidebar-steps">
+                  <li>Your SRN is generated instantly</li>
+                  <li>You're redirected to our live calendar</li>
+                  <li>Pick your appointment window</li>
+                  <li>We sync and confirm your booking</li>
+                  <li>Technician dispatched to your location</li>
+                </ol>
+              </div>
+              <div class="sidebar-card sidebar-trust">
+                <div class="trust-badge">
+                  <span class="trust-icon">◆</span>
+                  <div>
+                    <strong>Trusted by Businesses</strong>
+                    <p>Enterprise accounts and fleet services available. Contact us for volume pricing.</p>
+                  </div>
+                </div>
+                <hr class="trust-hr" />
+                <p class="contact-line">Questions? <a href="tel:+16153487683">(615) 348-7683</a></p>
+                <p class="contact-line"><a href="mailto:Contact@jubileeexecutivecarservice.com">Contact@jubileeexecutivecarservice.com</a></p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- ░░ OPS MODEL ░░ -->
+      <section class="section section-dark">
+        <div class="container">
+          <div class="section-header">
+            <p class="eyebrow eyebrow-gold">Built for Scale</p>
+            <h2>Our Operations Model</h2>
+          </div>
+          <div class="pipeline-visual">
+            <div class="pipeline-step">
+              <div class="ps-icon">◈</div>
+              <div class="ps-label">Request + SRN</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+              <div class="ps-icon">◉</div>
+              <div class="ps-label">GPS Capture</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+              <div class="ps-icon">◆</div>
+              <div class="ps-label">Geo Clustering</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+              <div class="ps-icon">◇</div>
+              <div class="ps-label">Route Dispatch</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+              <div class="ps-icon">✦</div>
+              <div class="ps-label">On-Site Wash</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+              <div class="ps-icon">↺</div>
+              <div class="ps-label">Rebook &amp; Loyalty</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
+    <!-- ░░ FOOTER ░░ -->
     <footer class="site-footer">
-      <div class="container footer-wrap">
-        <p>© <span id="year"></span> <span id="businessName">JECS Quick Wash</span></p>
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <span class="brand-jecs">JECS</span>
+          <span class="brand-sub">Quick Wash</span>
+          <p class="footer-tagline">A Jubilee Executive Car Service Company</p>
+          <a href="http://jubileeexecutivecarservice.com" class="footer-parent-link" target="_blank" rel="noopener">jubileeexecutivecarservice.com ↗</a>
+        </div>
+        <div class="footer-links">
+          <a href="#services">Services</a>
+          <a href="#locations">Locations</a>
+          <a href="#request">Book Now</a>
+          <a href="about.html">About</a>
+          <a href="tel:+16153487683">(615) 348-7683</a>
+        </div>
+        <div class="footer-copy">
+          <p>© <span id="year"></span> JECS Quick Wash. All rights reserved.</p>
+          <p class="footer-small">Luxury mobile car wash — Nashville & surrounding areas</p>
+        </div>
       </div>
     </footer>
 
+    <!-- Google Places (optional — graceful degradation if unavailable) -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZAA619g3JlruK77Lfm8vlopcR76vRGg&libraries=places&callback=initGooglePlaces" async defer></script>
     <script src="script.js"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script type="module" src="supabase-submit.js"></script>
   </body>
 </html>
