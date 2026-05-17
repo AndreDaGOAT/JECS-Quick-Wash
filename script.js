@@ -6,7 +6,7 @@
 const settings = {
   businessName: "JECS Quick Wash",
   phone: "+16153487683",
-  displayPhone: "(615) 348-7683",
+  displayPhone: "1(615)348-7683",
   email: "Contact@jubileeexecutivecarservice.com",
 };
 
