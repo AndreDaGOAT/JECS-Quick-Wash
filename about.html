@@ -1,37 +1,259 @@
-name: Deploy static site to GitHub Pages
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About JECS Quick Wash | Black Excellence in Every Wash</title>
+    <meta name="description" content="The story behind JECS Quick Wash — a Black-owned luxury mobile car wash built on precision, pride, and premium service." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .about-hero {
+        background: var(--navy-950);
+        color: var(--cream-50);
+        padding: 6rem 0 5rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .about-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(196,154,60,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(196,154,60,0.04) 1px, transparent 1px);
+        background-size: 60px 60px;
+        pointer-events: none;
+      }
+      .about-hero::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+      }
+      .about-hero-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 4rem;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+      }
+      .about-hero h1 { color: var(--cream-50); margin-bottom: 1rem; }
+      .about-hero p { color: rgba(230,218,200,0.8); }
+      .owner-photo-wrap {
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid rgba(196,154,60,0.3);
+        box-shadow: var(--shadow-lg);
+      }
+      .owner-photo-wrap img {
+        width: 100%;
+        max-height: 480px;
+        object-fit: cover;
+        display: block;
+      }
+      .values-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+      }
+      .value-card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--line-dark);
+        border-radius: var(--radius);
+        padding: 1.75rem 1.5rem;
+        transition: border-color 0.25s;
+      }
+      .value-card:hover { border-color: rgba(196,154,60,0.4); }
+      .value-icon {
+        font-size: 1.8rem;
+        color: var(--gold-400);
+        margin-bottom: 0.75rem;
+        display: block;
+      }
+      .value-card h3 { color: var(--cream-50); margin-bottom: 0.4rem; }
+      .value-card p { font-size: 0.88rem; color: rgba(220,210,190,0.72); line-height: 1.65; }
+      .parent-brand-section {
+        background: var(--cream-100);
+        border-top: 1px solid var(--line-light);
+        border-bottom: 1px solid var(--line-light);
+      }
+      .parent-brand-inner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+      }
+      .parent-brand-inner img {
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+      }
+      @media (max-width: 900px) {
+        .about-hero-grid,
+        .parent-brand-inner,
+        .values-grid { grid-template-columns: 1fr; }
+        .values-grid { max-width: 420px; margin-inline: auto; }
+      }
+    </style>
+  </head>
+  <body>
 
-on:
-  push:
-    branches: ["main"]
-  workflow_dispatch:
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="index.html">
+          <span class="brand-jecs">JECS</span>
+          <span class="brand-sub">Quick Wash</span>
+        </a>
+        <nav aria-label="Primary">
+          <ul class="nav">
+            <li><a href="index.html#services">Services</a></li>
+            <li><a href="index.html#locations">Locations</a></li>
+            <li><a href="index.html#request" class="nav-cta">Book Now</a></li>
+            <li><a href="about.html">About</a></li>
+          </ul>
+          <button class="hamburger" id="menuToggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+          </button>
+        </nav>
+      </div>
+      <div class="mobile-menu" id="mobileMenu">
+        <a href="index.html#services">Services</a>
+        <a href="index.html#locations">Locations</a>
+        <a href="index.html#request">Book Now</a>
+        <a href="about.html">About</a>
+      </div>
+    </header>
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+    <main>
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+      <!-- Hero -->
+      <section class="about-hero">
+        <div class="container about-hero-grid">
+          <div>
+            <p class="eyebrow-light">Our Story</p>
+            <h1>Black Excellence<br><em>In Every Wash</em></h1>
+            <p style="font-size:1.05rem; margin-top:1rem; max-width:54ch;">
+              JECS Quick Wash was founded as a natural extension of Jubilee Executive Car Service — bringing the same standard of precision, pride, and professionalism to mobile vehicle care.
+            </p>
+            <p style="margin-top:1rem; max-width:54ch; color:rgba(210,195,170,0.72)">
+              We built this business to serve busy professionals where they already are — maximizing convenience without ever compromising on quality.
+            </p>
+            <div style="margin-top:2rem">
+              <a class="btn btn-primary" href="index.html#request">Book Your Wash</a>
+            </div>
+          </div>
+          <div class="owner-photo-wrap">
+            <img src="assets/Owner1 Picture (1).png" alt="Owner of JECS Quick Wash" loading="lazy"
+              onerror="this.src=''; this.parentElement.style.background='var(--navy-800)'; this.parentElement.style.minHeight='300px';" />
+          </div>
+        </div>
+      </section>
 
-jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      <!-- Mission -->
+      <section class="section">
+        <div class="container two-col">
+          <div>
+            <p class="pill">Our Mission</p>
+            <h2>Built for Efficiency. Driven by Excellence.</h2>
+          </div>
+          <div>
+            <p>Our model is route-driven: we collect precise location data so operations staff can batch nearby requests, assign optimized routes, and serve more customers efficiently. Every wash is a reflection of our commitment to Black-owned business excellence.</p>
+            <p style="margin-top:1rem;">From a single car in a parking lot to a fleet of company vehicles, JECS Quick Wash delivers consistent, premium results — every time, on time.</p>
+          </div>
+        </div>
+      </section>
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      <!-- Values -->
+      <section class="section section-dark">
+        <div class="container">
+          <div class="section-header">
+            <p class="eyebrow-light">What We Stand For</p>
+            <h2>Our Core Values</h2>
+          </div>
+          <div class="values-grid">
+            <div class="value-card">
+              <span class="value-icon">◆</span>
+              <h3>Excellence</h3>
+              <p>Every vehicle we touch receives the same meticulous care we'd give our own. No shortcuts. No compromises.</p>
+            </div>
+            <div class="value-card">
+              <span class="value-icon">◉</span>
+              <h3>Efficiency</h3>
+              <p>Intelligent geographic routing means you wait less. We cluster nearby appointments to maximize throughput and minimize downtime.</p>
+            </div>
+            <div class="value-card">
+              <span class="value-icon">◈</span>
+              <h3>Trust</h3>
+              <p>Every booking generates a unique Service Request Number. You have full visibility from submission through completion.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
+      <!-- Parent Brand -->
+      <section class="section parent-brand-section">
+        <div class="container parent-brand-inner">
+          <div>
+            <p class="pill">Part of a Larger Legacy</p>
+            <h2>Jubilee Executive Car Service</h2>
+            <p>JECS Quick Wash is a proud extension of <strong>Jubilee Executive Car Service</strong> — Nashville's premier luxury transportation brand. The same commitment to excellence that built JECS drives every mobile wash we deliver.</p>
+            <p style="margin-top:1rem">
+              <a href="http://jubileeexecutivecarservice.com" target="_blank" rel="noopener" class="btn btn-primary" style="margin-top:0.5rem">
+                Visit Jubilee Executive ↗
+              </a>
+            </p>
+          </div>
+          <div>
+            <img src="assets/IMG_4680.jpeg" alt="Jubilee Executive Car Service luxury fleet" loading="lazy"
+              onerror="this.style.display='none'" />
+          </div>
+        </div>
+      </section>
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      <!-- Contact CTA -->
+      <section class="section section-dark">
+        <div class="container" style="text-align:center; max-width:600px;">
+          <p class="eyebrow-light">Get In Touch</p>
+          <h2>Ready to Experience JECS?</h2>
+          <p style="color:rgba(230,218,200,0.75); margin-top:0.75rem;">Whether you're booking a single wash or exploring fleet accounts, we're here to help.</p>
+          <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem">
+            <a class="btn btn-primary" href="index.html#request">Book Now</a>
+            <a class="btn btn-secondary" href="tel:+16153487683">(615) 348-7683</a>
+          </div>
+          <p style="margin-top:1.5rem; font-size:0.82rem; color:rgba(200,185,160,0.6)">
+            <a href="mailto:Contact@jubileeexecutivecarservice.com" style="color:var(--gold-400); text-decoration:none">Contact@jubileeexecutivecarservice.com</a>
+          </p>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <span class="brand-jecs">JECS</span>
+          <span class="brand-sub">Quick Wash</span>
+          <p class="footer-tagline">A Jubilee Executive Car Service Company</p>
+          <a href="http://jubileeexecutivecarservice.com" class="footer-parent-link" target="_blank" rel="noopener">jubileeexecutivecarservice.com ↗</a>
+        </div>
+        <div class="footer-links">
+          <a href="index.html#services">Services</a>
+          <a href="index.html#locations">Locations</a>
+          <a href="index.html#request">Book Now</a>
+          <a href="about.html">About</a>
+          <a href="tel:+16153487683">(615) 348-7683</a>
+        </div>
+        <div class="footer-copy">
+          <p>© <span id="year"></span> JECS Quick Wash. All rights reserved.</p>
+          <p class="footer-small">Luxury mobile car wash — Nashville & surrounding areas</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
