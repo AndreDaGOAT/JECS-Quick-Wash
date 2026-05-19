@@ -41,11 +41,11 @@ window.addEventListener("scroll", setActiveNav, { passive: true });
 
 // ── Scroll reveal ──
 const revealEls = document.querySelectorAll(
-  ".service-card, .step, .location-pill, .geo-panel, .sidebar-card, .pipeline-step, .srn-banner"
+  ".service-card, .step, .location-pill, .geo-panel, .sidebar-card, .srn-banner, .why-card, .testimonial-card, .proof-item, .value-card"
 );
 const revealObserver = new IntersectionObserver(
   (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
-  { threshold: 0.12 }
+  { threshold: 0.1 }
 );
 revealEls.forEach((el) => { el.classList.add("reveal"); revealObserver.observe(el); });
 
@@ -94,11 +94,27 @@ window.initGooglePlaces = function initGooglePlaces() {
   });
 };
 
-// ── Sticky header shadow on scroll ──
+// ── Service card → form pre-selection ──
+// When a user clicks any "Book" button in the services section,
+// the corresponding option is pre-selected in the form dropdown.
+// The user can still change it freely after arriving at the form.
+const serviceSelect = document.getElementById("service");
+
+document.querySelectorAll(".service-btn[data-service]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const value = btn.getAttribute("data-service");
+    if (serviceSelect && value) {
+      serviceSelect.value = value;
+      // Brief visual highlight so the user sees the pre-fill
+      serviceSelect.style.transition = "box-shadow 0.3s";
+      serviceSelect.style.boxShadow = "0 0 0 3px rgba(196,154,91,0.35)";
+      setTimeout(() => { serviceSelect.style.boxShadow = ""; }, 1800);
+    }
+  });
+});
+// ── Sticky header shadow ──
 const header = document.querySelector(".site-header");
 window.addEventListener("scroll", () => {
   if (!header) return;
-  header.style.boxShadow = window.scrollY > 20
-    ? "0 2px 24px rgba(0,0,0,0.35)"
-    : "none";
+  header.classList.toggle("scrolled", window.scrollY > 20);
 }, { passive: true });
