@@ -3,488 +3,163 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JECS Quick Wash | We Come to You — Nashville's Mobile Car Wash</title>
-    <meta name="description" content="Professional mobile car wash that comes to your office or parking lot. Book in 60 seconds, we handle everything. Nashville's most reliable mobile detailing service." />
-
+    <title>JECS Quick Wash | Quick Wash While You Work</title>
+    <meta
+      name="description"
+      content="JECS Quick Wash delivers fast, convenient on-site mobile car wash service at workplaces and high-traffic parking locations."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-
-    <header class="site-header" id="top">
+    <header class="site-header">
       <div class="container nav-wrap">
-        <a class="brand" href="index.html">
-          <span class="brand-jecs">JECS</span>
-          <span class="brand-sub">Quick Wash</span>
-        </a>
+        <a class="brand" href="index.html">JECS Quick Wash</a>
         <nav aria-label="Primary">
           <ul class="nav">
             <li><a href="#services">Services</a></li>
             <li><a href="#locations">Locations</a></li>
-            <li><a href="#how-it-works">How It Works</a></li>
-            <li><a href="#request" class="nav-cta">Book Now</a></li>
+            <li><a href="#request">Request Wash</a></li>
+            <li><a href="#ops">Operations Model</a></li>
             <li><a href="about.html">About</a></li>
           </ul>
-          <button class="hamburger" id="menuToggle" aria-label="Toggle menu">
-            <span></span><span></span><span></span>
-          </button>
         </nav>
-      </div>
-      <div class="mobile-menu" id="mobileMenu">
-        <a href="#services">Services</a>
-        <a href="#locations">Locations</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#request">Book Now</a>
-        <a href="about.html">About</a>
       </div>
     </header>
 
     <main>
-
-      <!-- HERO -->
-      <section class="hero">
+      <section class="hero section">
         <div class="container hero-grid">
-          <div class="hero-text">
-            <p class="pill">Nashville's Premier Mobile Car Wash</p>
-            <h1>Your Car, Clean.<br>Without Leaving Work.</h1>
-            <p class="lead">You don't have time for a car wash — and you shouldn't have to make time. Tell us where you're parked and we take care of everything while you stay focused on your day.</p>
+          <div>
+            <p class="pill">Quick Wash While You Work</p>
+            <h1>Fast. Convenient. On-site car wash where your day already happens.</h1>
+            <p class="lead">
+              We come to you — offices, parking lots, and events. Submit your wash request and our routing team batches stops by location for faster service.
+            </p>
             <div class="hero-actions">
-              <a class="btn btn-primary" href="#request">Book My Wash Now</a>
-              <a class="btn btn-secondary" href="#how-it-works">See How It Works</a>
-            </div>
-            <div class="trust-row">
-              <span class="trust-item">✦ Confirmed in Under 60 Seconds</span>
-              <span class="trust-item">✦ We Come to Your Location</span>
-              <span class="trust-item">✦ Backed by 10+ Years of Excellence</span>
+              <a class="btn btn-primary" href="#request">Request a Wash</a>
+              <a class="btn btn-secondary" href="about.html">Our Story</a>
             </div>
           </div>
-          <div class="hero-visual">
-            <div class="hero-photo-wrap">
-              <img src="assets/656D26D6-29F5-40B1-9E49-463421B80394.png" alt="JECS Quick Wash — Pristine Details, Premier Results" loading="eager" onerror="this.parentElement.classList.add('no-img')" />
-              <div class="photo-badge">
-                <span>Pristine Details.<br>Premier Results.</span>
-              </div>
-            </div>
-          </div>
+          <aside class="card hero-card">
+            <img class="hero-photo" src="assets/home-page.png" alt="JECS Quick Wash mobile wash on-site" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <div class="hero-fallback" style="display:none">Add your home image as <code>assets/home-page.png</code>.</div>
+          </aside>
         </div>
       </section>
 
-      <!-- PROOF BAR -->
-      <section class="proof-bar">
-        <div class="container proof-inner">
-          <div class="proof-item">
-            <span class="proof-num">500+</span>
-            <span class="proof-label">Vehicles Serviced</span>
-          </div>
-          <div class="proof-divider"></div>
-          <div class="proof-item">
-            <span class="proof-num">5★</span>
-            <span class="proof-label">Average Rating</span>
-          </div>
-          <div class="proof-divider"></div>
-          <div class="proof-item">
-            <span class="proof-num">10+</span>
-            <span class="proof-label">Years, Parent Brand</span>
-          </div>
-          <div class="proof-divider"></div>
-          <div class="proof-item">
-            <span class="proof-num">Nashville</span>
-            <span class="proof-label">&amp; Surrounding Areas</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- SERVICES -->
-      <section id="services" class="section section-dark">
+      <section id="services" class="section section-alt">
         <div class="container">
-          <div class="section-header">
-            <p class="eyebrow-light">Choose Your Service</p>
-            <h2>Simple Packages. Serious Results.</h2>
-            <p class="section-sub">No confusion. No upsells at the door. Pick what you need — we show up and deliver exactly what we promised.</p>
-          </div>
-          <div class="service-grid">
-
-            <article class="service-card" data-tier="essential">
-              <div class="service-card-top">
-                <div class="service-icon">◈</div>
-                <h3>Quick Wash</h3>
-                <p class="service-tagline">Exterior Detail</p>
-              </div>
-              <ul class="service-list">
-                <li>Full exterior rinse &amp; premium soap wash</li>
-                <li>Hand dry with a spot-free finish</li>
-                <li>Tire &amp; wheel shine</li>
-                <li>Windows cleaned, streak-free</li>
-              </ul>
-              <p class="service-closer">The fastest way to a clean car — no detour, no drive, no wait.</p>
-              <a href="#request" class="btn btn-outline service-btn" data-service="quick-wash">Book Quick Wash</a>
-            </article>
-
-            <article class="service-card service-card--featured" data-tier="signature">
-              <div class="featured-label">Most Popular</div>
-              <div class="service-card-top">
-                <div class="service-icon">◆</div>
-                <h3>Wash + Vacuum</h3>
-                <p class="service-tagline">Full Interior &amp; Exterior</p>
-              </div>
-              <ul class="service-list">
-                <li>Everything in Quick Wash</li>
-                <li>Full interior vacuum — seats, floor, cargo</li>
-                <li>Dashboard, console &amp; door panel wipe-down</li>
-                <li>Door jamb detail</li>
-                <li>Fresh air treatment</li>
-              </ul>
-              <p class="service-closer">The one our regulars never skip. You'll notice the difference the second you get in.</p>
-              <a href="#request" class="btn btn-primary service-btn" data-service="wash-vacuum">Book Wash + Vacuum</a>
-            </article>
-
-            <article class="service-card" data-tier="fleet">
-              <div class="service-card-top">
-                <div class="service-icon">◇</div>
-                <h3>Fleet &amp; Commercial</h3>
-                <p class="service-tagline">Multi-Vehicle &amp; Business Accounts</p>
-              </div>
-              <ul class="service-list">
-                <li>Recurring on-site visits built around your schedule</li>
-                <li>Volume pricing for any fleet size</li>
-                <li>One dedicated point of contact — always</li>
-                <li>Custom service agreements</li>
-                <li>Priority dispatch — your vehicles first</li>
-              </ul>
-              <p class="service-closer">Your fleet is the face of your business. We make sure it looks the part.</p>
-              <a href="#request" class="btn btn-outline service-btn" data-service="fleet">Get Fleet Quote</a>
-            </article>
-
+          <h2>Service Options</h2>
+          <div class="cards">
+            <article class="card"><h3>Quick Wash</h3><p>Exterior rinse, soap wash, dry, and tire finish.</p></article>
+            <article class="card"><h3>Wash + Vacuum</h3><p>Quick Wash plus interior vacuum and wipe down.</p></article>
+            <article class="card"><h3>Fleet & Commercial</h3><p>Volume pricing and scheduled on-site service for teams.</p></article>
           </div>
         </div>
       </section>
 
-      <!-- WHY US -->
-      <section class="section section-alt">
-        <div class="container">
-          <div class="section-header">
-            <p class="pill">Why JECS</p>
-            <h2>We Do What We Say.<br>Every Single Time.</h2>
-          </div>
-          <div class="why-grid">
-            <div class="why-card">
-              <div class="why-icon">◆</div>
-              <h3>A Proven Name Behind Every Wash</h3>
-              <p>JECS Quick Wash is built on the same foundation as Jubilee Executive Car Service — a brand Nashville's most demanding clients have trusted for over a decade. You're not taking a chance on someone new. You're working with a team that has already earned its reputation.</p>
-            </div>
-            <div class="why-card">
-              <div class="why-icon">◉</div>
-              <h3>We Give You Your Time Back</h3>
-              <p>The average car wash run costs you 45 minutes. We charge nothing for the trip — because you never make one. Book in 60 seconds, get your car cleaned while you work, and walk out to a spotless vehicle at the end of the day. That time is yours to keep.</p>
-            </div>
-            <div class="why-card">
-              <div class="why-icon">◈</div>
-              <h3>You Always Know Where Things Stand</h3>
-              <p>The moment you submit your request, you receive a booking confirmation number that tracks your appointment from start to finish. No chasing us down for updates. No wondering if we got your request. You're in the loop — automatically.</p>
-            </div>
-            <div class="why-card">
-              <div class="why-icon">✦</div>
-              <h3>The Same Standard. Every Time.</h3>
-              <p>We don't have a good day or a bad day tier of service. Every technician follows the same standard, uses the same professional products, and holds themselves to the same level of care — whether it's your first wash with us or your fifteenth.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- HOW IT WORKS -->
-      <section id="how-it-works" class="section">
-        <div class="container">
-          <div class="section-header">
-            <p class="pill">Simple from Start to Finish</p>
-            <h2>Here's Exactly What Happens</h2>
-            <p class="section-sub">Four steps. No surprises. No wasted time. Just a clean car waiting when your day is done.</p>
-          </div>
-          <div class="steps-track">
-            <div class="step">
-              <div class="step-num">01</div>
-              <div class="step-body">
-                <h3>Tell Us Where You Are</h3>
-                <p>Fill out the short form — takes about a minute. Give us your location and pick your service. That's the last thing you have to do. We handle everything from there.</p>
-              </div>
-            </div>
-            <div class="step-connector" aria-hidden="true"></div>
-            <div class="step">
-              <div class="step-num">02</div>
-              <div class="step-body">
-                <h3>Pick Your Time</h3>
-                <p>Choose an appointment window that fits your schedule — morning, midday, or afternoon. Your spot is locked the moment you confirm. We don't overbook and we don't run late without notice.</p>
-              </div>
-            </div>
-            <div class="step-connector" aria-hidden="true"></div>
-            <div class="step">
-              <div class="step-num">03</div>
-              <div class="step-body">
-                <h3>We Show Up. You Don't Move.</h3>
-                <p>Our technician comes directly to your vehicle. You stay at your desk, in your meeting, at lunch — wherever you are. We get the job done without touching a minute of your day.</p>
-              </div>
-            </div>
-            <div class="step-connector" aria-hidden="true"></div>
-            <div class="step">
-              <div class="step-num">04</div>
-              <div class="step-body">
-                <h3>Walk Out to a Clean Car</h3>
-                <p>You get a completion confirmation and your car is ready. No waiting around, no detour on the way home. Just clean — exactly the way it should be.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- LOCATIONS -->
-      <section id="locations" class="section section-dark">
+      <section id="locations" class="section">
         <div class="container two-col">
           <div>
-            <p class="eyebrow-light">We Come to You</p>
-            <h2>Wherever You Park,<br>We'll Be There.</h2>
-            <p>We built JECS around one idea: your car should be clean without you having to go anywhere. We serve offices, campuses, parking lots, and commercial sites across Nashville and surrounding areas — and we're expanding every month.</p>
-            <p class="location-note">Don't see your exact location? Submit a request anyway. We review every inquiry personally and may already be heading your way.</p>
+            <h2>Where We Operate</h2>
+            <p>JECS Quick Wash prioritizes workplaces and high-traffic parking areas to maximize route efficiency and reduce customer wait times.</p>
           </div>
-          <div class="location-grid">
-            <div class="location-pill">🏢 Corporate Offices</div>
-            <div class="location-pill">🎓 College Campuses</div>
-            <div class="location-pill">🅿️ Commuter &amp; Retail Lots</div>
-            <div class="location-pill">🚐 Business &amp; Fleet Depots</div>
-            <div class="location-pill">🏨 Hotels &amp; Resorts</div>
-            <div class="location-pill">🏥 Medical Campuses</div>
-          </div>
-        </div>
-
-        <div class="container" style="margin-top:3rem">
-          <div class="geo-panel">
-            <div class="geo-panel-icon">◉</div>
-            <div>
-              <h3>The More Customers Near You, the Better It Gets for Everyone</h3>
-              <p>When several customers book in the same area, we group those appointments together — which means more time slots open up in your neighborhood and everyone gets faster service. The smarter we route, the more availability you have.</p>
-            </div>
-            <div class="geo-cluster-viz" aria-hidden="true">
-              <div class="cluster-dot" style="--x:20%;--y:30%"></div>
-              <div class="cluster-dot" style="--x:28%;--y:42%"></div>
-              <div class="cluster-dot" style="--x:22%;--y:55%"></div>
-              <div class="cluster-dot cluster-dot--active" style="--x:50%;--y:35%"></div>
-              <div class="cluster-dot cluster-dot--active" style="--x:58%;--y:48%"></div>
-              <div class="cluster-dot cluster-dot--active" style="--x:52%;--y:60%"></div>
-              <div class="cluster-dot" style="--x:78%;--y:25%"></div>
-              <div class="cluster-dot" style="--x:82%;--y:50%"></div>
-              <div class="cluster-ring" style="--x:54%;--y:48%"></div>
-            </div>
+          <div class="card">
+            <h3>Coverage Focus</h3>
+            <ul>
+              <li>Office campuses</li>
+              <li>Retail and commuter lots</li>
+              <li>Event and venue parking areas</li>
+              <li>Fleet depots</li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <!-- TESTIMONIALS -->
-      <section class="section section-alt">
-        <div class="container">
-          <div class="section-header">
-            <p class="pill">Don't Take Our Word for It</p>
-            <h2>What Our Customers Say</h2>
+      <section id="request" class="section section-alt">
+        <div class="container two-col">
+          <div>
+            <h2>Request Wash</h2>
+            <p>Enter your contact and location details. We capture address + GPS coordinates for route planning and queue management.</p>
           </div>
-          <div class="testimonial-grid">
-            <div class="testimonial-card">
-              <div class="stars">★★★★★</div>
-              <p class="testimonial-quote">"I booked during lunch and my car was done before my 2pm meeting. Didn't leave my desk once. This is exactly what I needed."</p>
-              <div class="testimonial-author">
-                <span class="author-name">Marcus T.</span>
-                <span class="author-title">Operations Director, Nashville</span>
-              </div>
-            </div>
-            <div class="testimonial-card">
-              <div class="stars">★★★★★</div>
-              <p class="testimonial-quote">"We run a fleet of 12 vehicles. JECS handles everything on-site. They know our schedule, our standards, and they show up. Zero headaches."</p>
-              <div class="testimonial-author">
-                <span class="author-name">Denise W.</span>
-                <span class="author-title">Fleet Manager, Medical Group</span>
-              </div>
-            </div>
-            <div class="testimonial-card">
-              <div class="stars">★★★★★</div>
-              <p class="testimonial-quote">"I've tried three other mobile wash companies in this city. JECS is the only one that shows up on time, communicates clearly, and actually does the job right."</p>
-              <div class="testimonial-author">
-                <span class="author-name">Jerome A.</span>
-                <span class="author-title">Real Estate Broker, Brentwood</span>
-              </div>
+
+          <form id="customerForm" class="form" action="https://formspree.io/f/xqewgnbb" method="POST" novalidate>
+            <input type="text" name="full_name" placeholder="Full Name" required />
+            <input type="email" name="email" placeholder="Email" required />
+            <input type="tel" id="phoneInput" name="phone_number" placeholder="Phone Number" required />
+
+            <input id="address" type="text" name="formatted_address" placeholder="Workplace or Parking Location" required />
+            <input type="text" name="zip_code" placeholder="ZIP Code" inputmode="numeric" />
+
+            <select name="package_name" required>
+              <option value="quick-wash">Quick Wash</option>
+              <option value="wash-vacuum">Wash + Vacuum</option>
+              <option value="fleet">Fleet & Commercial</option>
+            </select>
+
+            <textarea name="special_notes" id="notes" rows="4" placeholder="Vehicle details or instructions"></textarea>
+
+                        <input type="date" name="requested_date" />
+            <select name="preferred_time_window">
+              <option value="">Preferred Time Window (Optional)</option>
+              <option>8AM-11AM</option>
+              <option>11AM-2PM</option>
+              <option>2PM-5PM</option>
+            </select>
+            <input type="text" name="vehicle_type" placeholder="Vehicle Type (Sedan, SUV, Truck)" />
+
+            <input type="hidden" id="lat" name="latitude" />
+            <input type="hidden" id="lng" name="longitude" />
+            <input type="hidden" id="placeId" name="google_place_id" />
+            <input type="hidden" id="serviceRequestId" name="service_request_id" />
+            <input type="hidden" id="calendlyUrl" name="calendly_url" value="https://calendly.com/aarmstrong1234/30min" />
+
+
+
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAADOPeJJPfrSYL0Wg"></div>
+
+            <button class="btn btn-primary" type="submit">Request My Wash</button>
+            <p id="locationHint" class="hint">Allow location access for faster dispatch accuracy.</p>
+            <p id="formMessage" class="hint" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="ops" class="section">
+        <div class="container two-col">
+          <div>
+            <h2>Operations Model</h2>
+            <p>Form entries are designed to flow into a spatial database so JECS staff can batch nearby requests, assign routes, and track service coverage.</p>
+          </div>
+          <div class="card">
+            <h3>Data Flow</h3>
+            <div class="pipeline">
+              <span>Request Form</span>
+              <span>Address + GPS</span>
+              <span>Queue + Routing</span>
+              <span>On-site Wash</span>
+              <span>Repeat Service</span>
             </div>
           </div>
         </div>
       </section>
-
-      <!-- REQUEST FORM -->
-      <section id="request" class="section section-request">
-        <div class="container">
-          <div class="section-header">
-            <p class="pill">You're One Step Away</p>
-            <h2>Book Your Wash Right Now</h2>
-            <p class="section-sub">Takes about a minute. The moment you submit, your appointment is live — confirmed, tracked, and on its way to you.</p>
-          </div>
-
-          <div class="form-layout">
-            <div class="srn-banner" id="srnBanner" style="display:none">
-              <span class="srn-label">Your Booking Confirmation Number</span>
-              <span class="srn-value" id="srnDisplay">—</span>
-              <span class="srn-note">Keep this handy — it'll be in your confirmation email and every update from our team.</span>
-            </div>
-
-            <form id="customerForm" class="booking-form" novalidate>
-
-              <div class="form-section-label">Your Details</div>
-              <div class="form-row-2">
-                <div class="field-wrap">
-                  <label for="name">Full Name <span class="req">*</span></label>
-                  <input type="text" id="name" name="name" placeholder="Your full name" required autocomplete="name" />
-                </div>
-                <div class="field-wrap">
-                  <label for="email">Email Address <span class="req">*</span></label>
-                  <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
-                </div>
-              </div>
-              <div class="field-wrap">
-                <label for="phone">Best Phone Number <span class="req">*</span></label>
-                <input type="tel" id="phone" name="phone" placeholder="(615) 000-0000" required autocomplete="tel" />
-              </div>
-
-              <div class="form-divider"></div>
-              <div class="form-section-label">Where &amp; What</div>
-
-              <div class="field-wrap">
-                <label for="address">Your Workplace or Parking Location <span class="req">*</span></label>
-                <input id="address" type="text" name="address" placeholder="Office address, parking lot, or building name…" required autocomplete="off" />
-                <p class="field-hint" id="locationHint">📍 The more specific, the easier we find your vehicle.</p>
-              </div>
-
-              <div class="form-row-2">
-                <div class="field-wrap">
-                  <label for="service">Service Package <span class="req">*</span></label>
-                  <select id="service" name="service" required>
-                    <option value="" disabled selected>Choose your service…</option>
-                    <option value="quick-wash">Quick Wash — Exterior Detail</option>
-                    <option value="wash-vacuum">Wash + Vacuum — Full Interior &amp; Exterior</option>
-                    <option value="fleet">Fleet &amp; Commercial — Volume Service</option>
-                  </select>
-                </div>
-                <div class="field-wrap">
-                  <label for="vehicle">Vehicle Type</label>
-                  <select id="vehicle" name="vehicle">
-                    <option value="">What are we washing?</option>
-                    <option value="sedan">Sedan / Coupe</option>
-                    <option value="suv">SUV / Crossover</option>
-                    <option value="truck">Truck / Full-Size</option>
-                    <option value="van">Van / Minivan</option>
-                    <option value="luxury">Luxury / High-End</option>
-                    <option value="fleet-multi">Fleet — Multiple Vehicles</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="field-wrap">
-                <label for="notes">Anything We Should Know?</label>
-                <textarea id="notes" name="notes" rows="3" placeholder="Vehicle color, make/model, parking spot, gate code, or any special requests…"></textarea>
-              </div>
-
-              <input type="hidden" id="lat" name="latitude" />
-              <input type="hidden" id="lng" name="longitude" />
-              <input type="hidden" id="placeId" name="place_id" />
-              <input type="hidden" id="serviceRequestId" name="service_request_id" />
-
-              <div class="form-divider"></div>
-
-              <div class="captcha-wrap">
-                <div
-                  class="cf-turnstile"
-                  data-sitekey="0x4AAAAAADOPeJJPfrSYL0Wg"
-                  data-theme="light"
-                  data-callback="onTurnstileSuccess"
-                  data-expired-callback="onTurnstileExpired"
-                  data-error-callback="onTurnstileError"
-                  data-retry="auto"
-                  data-retry-interval="5000"
-                ></div>
-                <p class="captcha-note">Security check powered by Cloudflare — completes automatically.</p>
-              </div>
-
-              <button class="btn btn-primary btn-submit" type="submit" id="submitBtn">
-                <span class="btn-text">Claim My Spot →</span>
-                <span class="btn-loading" style="display:none">Locking in your booking…</span>
-              </button>
-
-              <p id="formMessage" class="form-status" role="status" aria-live="polite"></p>
-            </form>
-
-            <aside class="form-sidebar">
-              <div class="sidebar-card">
-                <h3>What Happens the Moment You Hit Submit</h3>
-                <ol class="sidebar-steps">
-                  <li>Your booking is created and confirmed instantly</li>
-                  <li>You're taken to our calendar to pick your time</li>
-                  <li>We confirm and lock in your slot</li>
-                  <li>A technician is dispatched to your exact location</li>
-                  <li>You get a clean car — without moving an inch</li>
-                </ol>
-              </div>
-              <div class="sidebar-card sidebar-trust">
-                <div class="trust-badge">
-                  <span class="trust-icon">◆</span>
-                  <div>
-                    <strong>Your Booking Is Guaranteed</strong>
-                    <p>Once you submit, your request is in our system. We don't lose bookings, go quiet, or miss appointments. You'll always hear from us.</p>
-                  </div>
-                </div>
-                <hr class="trust-hr" />
-                <p class="contact-line">Prefer to call first? <a href="tel:+16153487683">(615) 348-7683</a></p>
-                <p class="contact-line"><a href="mailto:Contact@jubileeexecutivecarservice.com">Contact@jubileeexecutivecarservice.com</a></p>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </section>
-
-      <!-- FINAL CTA -->
-      <section class="section section-dark">
-        <div class="container" style="text-align:center; max-width:660px; margin-inline:auto;">
-          <p class="eyebrow-light">No Reason to Wait</p>
-          <h2>Your Car Won't Clean Itself.<br>But We Will.</h2>
-          <p style="color:#ddd1be; margin-top:0.75rem; font-size:1rem; line-height:1.7;">Every day you put it off is another day driving a car that doesn't reflect the standard you hold yourself to. Book right now — it takes a minute, and you'll wonder why you ever drove to a car wash.</p>
-          <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem;">
-            <a class="btn btn-primary" href="#request">Book My Wash Now</a>
-            <a class="btn btn-secondary" href="about.html">Meet the Team</a>
-          </div>
-        </div>
-      </section>
-
     </main>
 
     <footer class="site-footer">
       <div class="container footer-wrap">
-        <div class="footer-brand">
-          <a class="brand" href="index.html">
-            <span class="brand-jecs">JECS</span>
-            <span class="brand-sub">Quick Wash</span>
-          </a>
-          <p class="footer-tagline">A Jubilee Executive Car Service Company</p>
-          <a href="http://jubileeexecutivecarservice.com" class="footer-parent-link" target="_blank" rel="noopener">jubileeexecutivecarservice.com ↗</a>
-        </div>
-        <div class="footer-links">
-          <a href="#services">Services</a>
-          <a href="#locations">Locations</a>
-          <a href="#request">Book Now</a>
-          <a href="about.html">About</a>
-          <a href="tel:+16153487683">(615) 348-7683</a>
-        </div>
-        <div class="footer-copy">
-          <p>© <span id="year"></span> JECS Quick Wash. All rights reserved.</p>
-          <p class="footer-small">Professional mobile car wash — Nashville &amp; surrounding areas</p>
-        </div>
+        <p>© <span id="year"></span> <span id="businessName">JECS Quick Wash</span></p>
       </div>
     </footer>
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZAA619g3JlruK77Lfm8vlopcR76vRGg&libraries=places&callback=initGooglePlaces" async defer></script>
     <script src="script.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script type="module" src="supabase-submit.js"></script>
   </body>
 </html>
