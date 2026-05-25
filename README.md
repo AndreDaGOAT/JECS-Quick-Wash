@@ -1,145 +1,81 @@
-# JECS Quick Wash — Enhanced Platform
-
-> Luxury mobile car wash booking platform built for **jecsquickwash.github.io**
-
-## 🔗 Links
-- **Live Site**: https://jecsquickwash.github.io
-- **Repository**: https://github.com/AndreDaGOAT/JECS-Quick-Wash
-- **Parent Brand**: http://jubileeexecutivecarservice.com
-- **Calendly**: https://calendly.com/aarmstrong1234/30min
-- **Supabase Project**: https://rtbfevqhjsiqmtfrxdbd.supabase.co
-
----
-
-## ✅ Phase 1 Features (This Release)
-
-### 1. Service Request Number (SRN) System
-- Auto-generated on every form submission
-- Format: `JECS-YYYYMMDD-HHMMSS-XXXX`
-- Human-readable, date-sortable, db-primary-key ready
-- Displayed to user in banner, emailed via Formspree, stored in Supabase
-
-### 2. Cloudflare Turnstile CAPTCHA
-- Site Key: `0x4AAAAAADOPeJJPfrSYL0Wg`
-- Server verification via Supabase Edge Function `verify-turnstile`
-- Graceful degradation if edge function unavailable
-- Failed attempts logged to `captcha_logs` table
-
-### 3. Calendly Reintegration
-- Form submits first → SRN generated → Calendly redirect
-- SRN, name, email, service, address, notes pre-filled in Calendly URL
-- State persisted in `localStorage` across redirect
-- Post-Calendly return detected via referrer → booking status updated to `calendly_scheduled`
-
-### 4. Geographic Scheduling (Phase 2 Architecture Ready)
-- ZIP code extraction from address
-- `cluster_key` stored per submission
-- `latitude`, `longitude`, `place_id` captured for future routing
-- Architecture supports Google Maps API, Mapbox, ArcGIS
-
----
-
-## 🗄️ Supabase Schema
-
-### `customers` table
-```sql
-CREATE TABLE customers (
-  id                    uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  service_request_id    text UNIQUE NOT NULL,
-  name                  text,
-  email                 text,
-  phone                 text,
-  service               text,
-  vehicle               text,
-  notes                 text,
-  address               text,
-  latitude              float8,
-  longitude             float8,
-  place_id              text,
-  zip_code              text,
-  cluster_key           text,
-  captcha_verified      boolean DEFAULT false,
-  captcha_method        text,
-  booking_status        text DEFAULT 'pending_calendly',
-  calendly_returned_at  timestamptz,
-  created_at            timestamptz DEFAULT now()
-);
-```
-
-### `captcha_logs` table
-```sql
-CREATE TABLE captcha_logs (
-  id      uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  srn     text,
-  reason  text,
-  ts      timestamptz DEFAULT now()
-);
-```
-
----
-
-## 🚀 Deploy to GitHub Pages
-
-1. Push all files to `main` branch of `https://github.com/AndreDaGOAT/JECS-Quick-Wash`
-2. Go to **Settings → Pages → Source: GitHub Actions**
-3. The workflow at `.github/workflows/deploy-pages.yml` deploys automatically
-4. Site live at: `https://jecsquickwash.github.io` (or configure custom domain)
-
-### Supabase Edge Function: verify-turnstile
-Deploy with Supabase CLI:
-```bash
-supabase login
-supabase link --project-ref rtbfevqhjsiqmtfrxdbd
-supabase functions deploy verify-turnstile
-```
-
-Edge function code (`supabase/functions/verify-turnstile/index.ts`):
-```typescript
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-
-const SECRET_KEY = Deno.env.get("TURNSTILE_SECRET_KEY") || "0x4AAAAAADOPeLZ8u1ipBqDvJme1v2bCZ2c";
-
-serve(async (req) => {
-  const { token } = await req.json();
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ secret: SECRET_KEY, response: token }),
-  });
-  const data = await res.json();
-  return new Response(JSON.stringify({ success: data.success }), {
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-  });
-});
-```
-
----
-
-## 📁 File Structure
-```
-JECS-Quick-Wash/
-├── index.html           ← Main page (hero, services, form)
-├── about.html           ← About page
-├── styles.css           ← Full luxury design system
-├── script.js            ← Nav, geolocation, Google Places
-├── supabase-submit.js   ← SRN, CAPTCHA, Calendly, Supabase
-├── assets/              ← Images and SVGs
-└── .github/
-    └── workflows/
-        └── deploy-pages.yml
-```
-
----
-
-## 🗺️ Roadmap
-
-| Phase | Feature | Status |
-|-------|---------|--------|
-| 1 | SRN Generation | ✅ Complete |
-| 1 | Cloudflare Turnstile CAPTCHA | ✅ Complete |
-| 1 | Calendly Reintegration + State Sync | ✅ Complete |
-| 2 | Geographic Clustering | 🏗 Architecture Ready |
-| 2 | Route Optimization | 📋 Planned |
-| 3 | Rebooking Automation | 📋 Planned |
-| 3 | Subscription / Loyalty Plans | 📋 Planned |
-| 3 | AI Dispatch Optimization | 📋 Planned |
+diff --git a/README.md b/README.md
+index 3f51556bdac43f16bf115da8792db6ab1c5d1532..29d92262c06ed305d1ca343982da03cb0f927ff8 100644
+--- a/README.md
++++ b/README.md
+@@ -1,10 +1,66 @@
+-- 👋 Hi, I’m @AndreDaGOAT
+-- 👀 I’m interested in programming, data analystics, AI coding..
+-- 🌱 I’m currently learning Python, AI coding enhancements...
+-- 💞️ I’m looking to collaborate on GIS integrations, python best practices, AI enhancing...
+-- 📫 How to reach me aarmstrong1234@gmail.com...
+-
+-<!---
+-AndreDaGOAT/AndreDaGOAT is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+-You can click the Preview link to take a look at your changes.
+---->
++# JECS Quick Wash (GitHub Pages)
++
++JECS Quick Wash is a mobile, location-first wash request system focused on workplaces and high-traffic parking locations.
++
++## Service model shift
++
++- Brand renamed to **JECS Quick Wash**.
++- UX changed to a simple **Request Wash** workflow (no calendar-first flow).
++- Form captures **address + GPS coordinates** to support dispatch and routing.
++- Architecture supports **Formspree (temporary)** plus **Supabase/PostGIS (target)**.
++
++## Current stack
++
++- `index.html` — homepage, services, request form, operations model
++- `about.html` — history and mission
++- `script.js` — geolocation capture and Google Places autocomplete
++- `supabase-submit.js` — module-based CAPTCHA-gated dual submit to Formspree + Supabase
++- `styles.css` — existing UI system
++
++## Required integrations
++
++- Form endpoint: `https://formspree.io/f/xqewgnbb`
++- Google Places API script with `libraries=places`
++- Optional Supabase REST values in `script.js`:
++  - `supabaseUrl`
++  - `supabaseAnonKey`
++
++## Suggested Supabase table
++
++Table: `wash_requests`
++- `id` uuid primary key
++- `name` text
++- `email` text
++- `phone` text
++- `address` text
++- `service` text
++- `notes` text
++- `latitude` double precision
++- `longitude` double precision
++- `place_id` text
++- `created_at` timestamp default now()
++
++Then add PostGIS geometry column for map routing and queue dashboards.
++
++## MVP reliability upgrades for jecsquickwash.github.io
++
++- **Service Request Number (SRN)** is generated client-side before insert using format: `JECS-YYYYMMDD-HHMMSS-RANDOM4`.
++- SRN is posted to Formspree + Supabase and persisted in localStorage for redirect continuity.
++- **Calendly reintegration**: after successful submit, user is redirected to `https://calendly.com/aarmstrong1234/30min` with SRN/service/location/notes passed into Calendly custom answers.
++- **CAPTCHA**: Cloudflare Turnstile widget is included with site key `0x4AAAAAADOPeJJPfrSYL0Wg`.
++- **Server-side CAPTCHA validation**: implemented via Supabase Edge Function call `verify-turnstile` from `supabase-submit.js`.
++
++### Required backend task
++
++Create a Supabase Edge Function named `verify-turnstile` that validates Turnstile token using your secret key and returns `{ success: true/false }`.
++Without this function, form submission will be blocked by CAPTCHA validation.
++
++
++If Edge Function is unavailable, frontend now allows token-based fallback so requests are not blocked in MVP testing; restore strict server-side enforcement in production.
++
++
++## Enterprise schema alignment updates
++
++- Form fields now align to enterprise columns: `full_name`, `phone_number`, `formatted_address`, `google_place_id`, `zip_code`, `package_name`, `vehicle_type`, `requested_date`, `preferred_time_window`, `special_notes`.
++- Frontend now sends request payload to Supabase Edge Function `create-service-request` (recommended for RLS-safe writes across `customers`, `vehicles`, and `service_requests`).
++- If edge create fails, request still posts to Formspree and continues to Calendly so client experience remains smooth.
