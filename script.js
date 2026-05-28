@@ -4,7 +4,7 @@ const settings = {
   displayPhone: "(615) 348-7683",
   email: "Contact@jubileeexecutivecarservice.com",
   formspreeEndpoint: "https://formspree.io/f/xqewgnbb",
-  supabaseUrl: "",
+  supabaseUrl: "https://mylqkbpclcrqorjctjxn.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg",
 };
 
