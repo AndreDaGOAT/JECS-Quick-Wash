@@ -1,45 +1,23 @@
 /* =============================================
    JECS Quick Wash — supabase-submit.js
-
-   FIXES APPLIED (2025-05):
-   1. Updated Supabase URL to correct project (mylqkbpclcrqorjctjxn)
-   2. Removed stale anon key — must be set via JECS_SUPABASE_ANON_KEY
-      constant below once retrieved from Supabase dashboard
-   3. Fixed insert(): removed .single() after insert — it causes
-      PGRST116 error when RLS is enabled and no row is returned
-   4. Added explicit RLS-safe insert (no select after insert)
-   5. Fixed error surfacing — errors were swallowed silently
-   6. Added console diagnostics for every failure path
-   7. CAPTCHA bypass mode for testing — set BYPASS_CAPTCHA = true
-   8. customers table must exist — SQL scaffold at bottom of file
+   Phase 2: Multi-table insert flow
+   Tables: customers → vehicles → service_requests
+   + captcha_logs
    ============================================= */
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-// ─────────────────────────────────────────────
-// CONFIG — UPDATE THESE VALUES
-// ─────────────────────────────────────────────
-// NEW Supabase project (mylqkbpclcrqorjctjxn)
-// Get your anon key from:
-//   Supabase Dashboard → Project Settings → API → anon/public key
-const SUPABASE_URL      = "https://mylqkbpclcrqorjctjxn.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg";
-
-const CALENDLY_BASE      = "https://calendly.com/aarmstrong1234/30min";
+// ── Config ──────────────────────────────────
+const SUPABASE_URL      = "https://rtbfevqhjsiqmtfrxdbd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YmZldnFoanNpcW10ZnJ4ZGJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDg4NDMsImV4cCI6MjA5MzQ4NDg0M30.ASbGycrTfL1REEdF1D-Wg0ko6CrZh5rt9eDpO2WDi4Q";
+const CALENDLY_BASE     = "https://calendly.com/aarmstrong1234/30min";
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xqewgnbb";
 
-// Set true during testing to skip CAPTCHA requirement
-const BYPASS_CAPTCHA = false;
-
-// ─────────────────────────────────────────────
-// SUPABASE CLIENT
-// ─────────────────────────────────────────────
+// ── Supabase Client ──────────────────────────
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-// ─────────────────────────────────────────────
-// DOM REFERENCES
-// ─────────────────────────────────────────────
+// ── DOM References ───────────────────────────
 const form        = document.getElementById("customerForm");
 const formMessage = document.getElementById("formMessage");
 const submitBtn   = document.getElementById("submitBtn");
@@ -48,16 +26,16 @@ const srnBanner   = document.getElementById("srnBanner");
 const srnDisplay  = document.getElementById("srnDisplay");
 
 // ─────────────────────────────────────────────
-// 1. SRN GENERATION
+// 1. SERVICE REQUEST NUMBER (SRN) GENERATION
 //    Format: JECS-YYYYMMDD-HHMMSS-XXXX
 // ─────────────────────────────────────────────
 function generateSrn() {
   const now  = new Date();
-  const pad  = (n) => String(n).padStart(2, "0");
+  const pad  = (n, w = 2) => String(n).padStart(w, "0");
   const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
   const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `JECS-${date}-${time}-${rand}`;
+  const rand4 = Math.floor(1000 + Math.random() * 9000);
+  return `JECS-${date}-${time}-${rand4}`;
 }
 
 function showSrnBanner(srn) {
@@ -68,55 +46,31 @@ function showSrnBanner(srn) {
 }
 
 // ─────────────────────────────────────────────
-// 2. CAPTCHA
+// 2. CAPTCHA VERIFICATION
 // ─────────────────────────────────────────────
-let _turnstileToken = null;
-
-window.onTurnstileSuccess = (token) => {
-  _turnstileToken = token;
-  console.info("[JECS] Turnstile token received ✓");
-};
-window.onTurnstileExpired = () => {
-  _turnstileToken = null;
-  setStatus("Security check expired — please verify again.", "error");
-};
-window.onTurnstileError = (code) => {
-  _turnstileToken = null;
-  console.error("[JECS] Turnstile error:", code);
-};
-
-function getTurnstileToken() {
-  if (_turnstileToken) return _turnstileToken;
-  if (typeof window.turnstile !== "undefined") {
-    try {
-      const t = window.turnstile.getResponse();
-      if (t) return t;
-    } catch (_) {}
-  }
-  const el = document.querySelector('[name="cf-turnstile-response"]');
-  return el?.value || null;
-}
-
-async function verifyToken(token) {
-  if (BYPASS_CAPTCHA) {
-    console.warn("[JECS] CAPTCHA bypass active — remove before launch");
-    return { ok: true, reason: "bypassed" };
-  }
+async function verifyTurnstile(token) {
   if (!token) return { ok: false, reason: "missing_token" };
 
   try {
     const { data, error } = await supabase.functions.invoke("verify-turnstile", {
       body: { token },
     });
-    if (!error && data?.success === true)  return { ok: true,  reason: "server_verified" };
-    if (!error && data?.success === false) return { ok: false, reason: "server_rejected" };
-    console.warn("[JECS] Edge function error:", error?.message);
-  } catch (e) {
-    console.warn("[JECS] Edge function threw:", e);
-  }
 
-  // Edge function not deployed yet — accept token, flag for review
-  return { ok: true, reason: "token_accepted_pending_server" };
+    if (error) {
+      console.warn("[JECS CAPTCHA] Edge function unavailable:", error.message);
+      return { ok: true, reason: "edge_unavailable", token };
+    }
+
+    if (!data?.success) {
+      console.warn("[JECS CAPTCHA] Verification failed:", data);
+      return { ok: false, reason: "verification_failed" };
+    }
+
+    return { ok: true, reason: "verified" };
+  } catch (err) {
+    console.error("[JECS CAPTCHA] Unexpected error:", err);
+    return { ok: true, reason: "edge_unavailable", token };
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -124,86 +78,98 @@ async function verifyToken(token) {
 // ─────────────────────────────────────────────
 function buildCalendlyUrl(fd, srn) {
   const url     = new URL(CALENDLY_BASE);
-  const name    = (fd.get("name")    || "").trim();
-  const email   = (fd.get("email")   || "").trim();
-  const service = (fd.get("service") || "").trim();
-  const vehicle = (fd.get("vehicle") || "").trim();
-  const address = (fd.get("address") || "").trim();
-  const notes   = (fd.get("notes")   || "").trim();
+  const name    = String(fd.get("name")    || "").trim();
+  const email   = String(fd.get("email")   || "").trim();
+  const service = String(fd.get("service") || "").trim();
+  const vehicle = String(fd.get("vehicle") || "").trim();
+  const address = String(fd.get("address") || "").trim();
+  const notes   = String(fd.get("notes")   || "").trim();
 
-  if (name)  url.searchParams.set("name",  name);
+  if (name)  url.searchParams.set("name", name);
   if (email) url.searchParams.set("email", email);
+
   url.searchParams.set("a1", `SRN: ${srn} | Service: ${service}${vehicle ? ` | Vehicle: ${vehicle}` : ""}`);
   url.searchParams.set("a2", address);
   url.searchParams.set("a3", notes || "(no additional notes)");
+
   return url.toString();
 }
 
 // ─────────────────────────────────────────────
-// 4. GEO PAYLOAD
+// 4. GEO / CLUSTER HELPER
+//    cluster_key groups requests by ZIP for
+//    efficient route dispatch
 // ─────────────────────────────────────────────
 function buildGeoPayload(fd) {
   const lat     = parseFloat(fd.get("latitude"));
   const lng     = parseFloat(fd.get("longitude"));
-  const address = (fd.get("address") || "").trim();
-  const zip     = (address.match(/\b(\d{5})(?:-\d{4})?\b/) || [])[1] || null;
+  const address = String(fd.get("address") || "").trim();
+  const zipMatch = address.match(/\b(\d{5})(?:-\d{4})?\b/);
+  const zipCode  = zipMatch ? zipMatch[1] : null;
+
   return {
     latitude:    isFinite(lat) ? lat : null,
     longitude:   isFinite(lng) ? lng : null,
     place_id:    fd.get("place_id") || null,
-    zip_code:    zip,
-    cluster_key: zip || "unzoned",
+    zip_code:    zipCode,
+    cluster_key: zipCode || "unzoned",
   };
 }
 
 // ─────────────────────────────────────────────
-// 5. UI HELPERS
+// 5. PACKAGE LOOKUP
+//    Resolves the human-readable service selection
+//    to a package_id UUID from service_packages
+// ─────────────────────────────────────────────
+
+// Maps form select values to package_name values in service_packages table
+const SERVICE_PACKAGE_MAP = {
+  "quick-wash":   "Quick Wash",
+  "wash-vacuum":  "Wash + Vacuum",
+  "fleet":        "Fleet Service",
+};
+
+async function resolvePackageId(serviceValue) {
+  const packageName = SERVICE_PACKAGE_MAP[serviceValue];
+  if (!packageName) return null;
+
+  const { data, error } = await supabase
+    .from("service_packages")
+    .select("package_id")
+    .eq("package_name", packageName)
+    .single();
+
+  if (error || !data) {
+    console.warn("[JECS] Could not resolve package_id for:", serviceValue, error?.message);
+    return null;
+  }
+
+  return data.package_id;
+}
+
+// ─────────────────────────────────────────────
+// 6. UI HELPERS
 // ─────────────────────────────────────────────
 function setStatus(msg, type = "info") {
   if (!formMessage) return;
   formMessage.textContent = msg;
-  formMessage.className   = `form-status ${type}`;
+  formMessage.className = `form-status ${type}`;
 }
 
-function setLoading(on) {
+function setLoading(loading) {
   if (!submitBtn) return;
-  submitBtn.disabled = on;
-  const t = submitBtn.querySelector(".btn-text");
-  const l = submitBtn.querySelector(".btn-loading");
-  if (t) t.style.display = on ? "none"   : "inline";
-  if (l) l.style.display = on ? "inline" : "none";
+  const textEl    = submitBtn.querySelector(".btn-text");
+  const loadingEl = submitBtn.querySelector(".btn-loading");
+  submitBtn.disabled = loading;
+  if (textEl)    textEl.style.display    = loading ? "none" : "inline";
+  if (loadingEl) loadingEl.style.display = loading ? "inline" : "none";
 }
 
 // ─────────────────────────────────────────────
-// 6. SUPABASE INSERT — RLS SAFE
-//    Key fix: no .select().single() after insert.
-//    With RLS enabled and no SELECT policy, that
-//    returns PGRST116 even on a successful insert.
-//    We just insert and check for an error object.
-// ─────────────────────────────────────────────
-async function insertToSupabase(payload) {
-  console.info("[JECS] Attempting Supabase insert:", payload);
-
-  const { error } = await supabase
-    .from("service_requests")   // ← canonical table name
-    .insert(payload);
-
-  if (error) {
-    console.error("[JECS] Supabase insert error:", {
-      message: error.message,
-      code:    error.code,
-      details: error.details,
-      hint:    error.hint,
-    });
-    return { ok: false, error };
-  }
-
-  console.info("[JECS] Supabase insert success ✓");
-  return { ok: true };
-}
-
-// ─────────────────────────────────────────────
-// 7. FORM SUBMIT HANDLER
+// 7. FORM SUBMISSION HANDLER
+//    Step 1 → insert customers
+//    Step 2 → insert vehicles
+//    Step 3 → insert service_requests
 // ─────────────────────────────────────────────
 if (form) {
   form.addEventListener("submit", async (e) => {
@@ -215,94 +181,160 @@ if (form) {
     }
 
     setLoading(true);
-    setStatus("Checking your request…");
+    setStatus("Validating your request…");
 
     // ── CAPTCHA ──
-    let token = getTurnstileToken();
-    if (!token && !BYPASS_CAPTCHA) {
-      await new Promise((r) => setTimeout(r, 1400));
-      token = getTurnstileToken();
-    }
+    const turnstileToken = form.querySelector('[name="cf-turnstile-response"]')?.value;
+    const captchaResult  = await verifyTurnstile(turnstileToken);
 
-    const captcha = await verifyToken(token);
-    if (!captcha.ok) {
-      setStatus("Please complete the security check and try again.", "error");
+    if (!captchaResult.ok) {
+      setStatus("CAPTCHA validation failed. Please refresh and try again.", "error");
       setLoading(false);
-      try { window.turnstile?.reset(); _turnstileToken = null; } catch (_) {}
       return;
     }
 
-    // ── SRN ──
+    // ── Generate SRN ──
     const srn = generateSrn();
     if (srnInput) srnInput.value = srn;
     showSrnBanner(srn);
-    setStatus("Saving your booking…");
+    setStatus(`SRN generated: ${srn}`);
 
-    // ── Build payloads ──
+    // ── Collect form data ──
     const fd  = new FormData(form);
     const geo = buildGeoPayload(fd);
 
-    const dbPayload = {
-      service_request_id: srn,
-      name:               (fd.get("name")    || "").trim() || null,
-      email:              (fd.get("email")   || "").trim() || null,
-      phone:              (fd.get("phone")   || "").trim() || null,
-      service:            (fd.get("service") || "").trim() || null,
-      vehicle:            (fd.get("vehicle") || "").trim() || null,
-      notes:              (fd.get("notes")   || "").trim() || null,
-      address:            (fd.get("address") || "").trim() || null,
-      latitude:           geo.latitude,
-      longitude:          geo.longitude,
-      place_id:           geo.place_id,
-      zip_code:           geo.zip_code,
-      cluster_key:        geo.cluster_key,
-      captcha_verified:   captcha.ok,
-      captcha_method:     captcha.reason,
-      booking_status:     "pending_calendly",
-    };
+    const name    = String(fd.get("name")    || "").trim() || null;
+    const email   = String(fd.get("email")   || "").trim() || null;
+    const phone   = String(fd.get("phone")   || "").trim() || null;
+    const address = String(fd.get("address") || "").trim() || null;
+    const service = String(fd.get("service") || "").trim() || null;
+    const vehicle = String(fd.get("vehicle") || "").trim() || null;
+    const notes   = String(fd.get("notes")   || "").trim() || null;
 
-    // ── Persist locally (survives Calendly redirect) ──
+    // ── Persist to localStorage (survives Calendly redirect) ──
     try {
-      localStorage.setItem("jecs_last_srn",      srn);
-      localStorage.setItem("jecs_last_payload",  JSON.stringify(dbPayload));
-      localStorage.setItem("jecs_submission_ts", String(Date.now()));
-    } catch (_) {}
+      localStorage.setItem("jecs_last_srn", srn);
+      localStorage.setItem("jecs_submission_ts", Date.now().toString());
+      localStorage.setItem("jecs_last_payload", JSON.stringify({
+        srn, name, email, phone, address, service, vehicle, notes, geo,
+      }));
+    } catch (_) { /* quota exceeded — non-fatal */ }
 
-    // ── Submit: Supabase + Formspree in parallel ──
-    const [sbResult, fsResult] = await Promise.allSettled([
-      insertToSupabase(dbPayload),
-      fetch(FORMSPREE_ENDPOINT, {
-        method: "POST",
-        body:   fd,
-        headers: { Accept: "application/json" },
-      }),
-    ]);
+    setStatus("Saving your request…");
 
-    const sbOk = sbResult.status === "fulfilled" && sbResult.value?.ok;
-    const fsOk = fsResult.status === "fulfilled" && fsResult.value?.ok;
+    // ── Parallel: Formspree backup ──
+    const formspreePromise = fetch(FORMSPREE_ENDPOINT, {
+      method: "POST",
+      body: fd,
+      headers: { Accept: "application/json" },
+    });
 
-    console.info("[JECS] Results — Supabase:", sbOk, "| Formspree:", fsOk);
+    // ────────────────────────────────────────
+    // STEP 1 — Insert into customers
+    // ────────────────────────────────────────
+    const { data: customerData, error: customerError } = await supabase
+      .from("customers")
+      .insert({
+        full_name:         name,
+        email:             email,
+        phone_number:      phone,
+        formatted_address: address,
+        google_place_id:   geo.place_id,
+        zip_code:          geo.zip_code,
+        latitude:          geo.latitude,
+        longitude:         geo.longitude,
+        created_at:        new Date().toISOString(),
+      })
+      .select("customer_id")
+      .single();
 
-    if (!sbOk && !fsOk) {
-      const sbErr = sbResult.value?.error?.message || sbResult.reason?.message || "DB error";
-      const fsErr = fsResult.reason?.message || "Email error";
-      setStatus(
-        `We couldn't save your request right now. Please call us at (615) 348-7683. [${sbErr}]`,
-        "error"
-      );
+    if (customerError || !customerData) {
+      console.error("[JECS] customers insert failed:", customerError?.message);
+      setStatus("Submission failed at customer step. Please try again or call (615) 348-7683.", "error");
       setLoading(false);
       return;
     }
 
-    if (!sbOk) {
-      const sbErr = sbResult.value?.error?.message || "Unknown";
-      console.warn("[JECS] Supabase failed, email backup succeeded. Error:", sbErr);
-      setStatus(`Booking received via email backup — SRN: ${srn}. Redirecting…`);
-    } else {
-      setStatus(`Booking saved! SRN: ${srn} — heading to your calendar…`, "success");
+    const customerId = customerData.customer_id;
+
+    // ────────────────────────────────────────
+    // STEP 2 — Insert into vehicles
+    // ────────────────────────────────────────
+    let vehicleId = null;
+
+    if (vehicle) {
+      const { data: vehicleData, error: vehicleError } = await supabase
+        .from("vehicles")
+        .insert({
+          customer_id:  customerId,
+          vehicle_type: vehicle,
+          created_at:   new Date().toISOString(),
+        })
+        .select("vehicle_id")
+        .single();
+
+      if (vehicleError || !vehicleData) {
+        console.warn("[JECS] vehicles insert failed:", vehicleError?.message);
+        // Non-fatal — service request can proceed without vehicle_id
+      } else {
+        vehicleId = vehicleData.vehicle_id;
+      }
     }
 
-    // ── Redirect to Calendly ──
+    // ────────────────────────────────────────
+    // STEP 3 — Resolve package_id + Insert into service_requests
+    // ────────────────────────────────────────
+    const packageId = await resolvePackageId(service);
+
+    const { data: srData, error: srError } = await supabase
+      .from("service_requests")
+      .insert({
+        service_request_number: srn,
+        customer_id:            customerId,
+        vehicle_id:             vehicleId,
+        package_id:             packageId,
+        special_notes:          notes,
+        status:                 "pending_calendly",
+        cluster_key:            geo.cluster_key,
+        requested_date:         new Date().toISOString().split("T")[0],
+        created_at:             new Date().toISOString(),
+      })
+      .select("request_id")
+      .single();
+
+    if (srError || !srData) {
+      console.error("[JECS] service_requests insert failed:", srError?.message);
+      setStatus("Submission failed at request step. Please try again or call (615) 348-7683.", "error");
+      setLoading(false);
+      return;
+    }
+
+    // ── Evaluate Formspree result ──
+    const formspreeResult = await Promise.allSettled([formspreePromise]);
+    const formspreeOk = formspreeResult[0].status === "fulfilled" && formspreeResult[0].value.ok;
+    if (!formspreeOk) {
+      console.warn("[JECS] Formspree backup failed — Supabase succeeded, continuing.");
+    }
+
+    // ────────────────────────────────────────
+    // CAPTCHA LOG — only for non-verified cases
+    // ────────────────────────────────────────
+    if (captchaResult.reason !== "verified") {
+      try {
+        await supabase.from("captcha_logs").insert({
+          id:               crypto.randomUUID(),
+          srn:              srn,
+          reason:           captchaResult.reason,
+          captcha_verified: captchaResult.ok,
+          captcha_method:   captchaResult.reason,
+          ts:               new Date().toISOString(),
+        });
+      } catch (_) { /* non-fatal */ }
+    }
+
+    setStatus(`Request saved! SRN: ${srn} — redirecting to scheduling…`, "success");
+
+    // ── Build Calendly URL + redirect ──
     const calendlyUrl = buildCalendlyUrl(fd, srn);
     await new Promise((r) => setTimeout(r, 1800));
     window.location.assign(calendlyUrl);
@@ -310,32 +342,34 @@ if (form) {
 }
 
 // ─────────────────────────────────────────────
-// 8. POST-CALENDLY RETURN
+// 8. POST-CALENDLY RETURN HANDLER
+//    Updates service_requests.status on return
 // ─────────────────────────────────────────────
-(async function handleReturn() {
-  const params       = new URLSearchParams(window.location.search);
-  const srn          = params.get("srn") || localStorage.getItem("jecs_last_srn");
-  const ts           = parseInt(localStorage.getItem("jecs_submission_ts") || "0", 10);
+(async function handleCalendlyReturn() {
+  const params      = new URLSearchParams(window.location.search);
+  const returnedSrn = params.get("srn") || localStorage.getItem("jecs_last_srn");
+  const ts          = parseInt(localStorage.getItem("jecs_submission_ts") || "0", 10);
+  const age         = Date.now() - ts;
+
+  if (!returnedSrn || age > 7_200_000) return;
+
   const fromCalendly = document.referrer.includes("calendly.com");
+  if (!fromCalendly && !params.get("srn")) return;
 
-  if (!srn || Date.now() - ts > 7_200_000) return;
-  if (!fromCalendly && !params.get("srn"))  return;
+  // Update status on service_requests (correct table)
+  try {
+    await supabase
+      .from("service_requests")
+      .update({ status: "calendly_scheduled" })
+      .eq("service_request_number", returnedSrn);
+  } catch (_) { /* non-fatal */ }
 
-  const { error } = await supabase
-    .from("service_requests")
-    .update({
-      booking_status:       "calendly_scheduled",
-      calendly_returned_at: new Date().toISOString(),
-    })
-    .eq("service_request_id", srn);
-
-  if (error) console.warn("[JECS] Return update error:", error.message);
-
+  // Show confirmation banner
   if (srnBanner && srnDisplay) {
-    srnDisplay.textContent = srn;
-    const note = srnBanner.querySelector(".srn-note");
-    if (note) note.textContent = "✓ You're booked — check your email for the confirmation.";
-    srnBanner.style.display     = "flex";
+    srnDisplay.textContent = returnedSrn;
+    const srnNote = srnBanner.querySelector(".srn-note");
+    if (srnNote) srnNote.textContent = "✓ Scheduling complete — check your email for confirmation.";
+    srnBanner.style.display = "flex";
     srnBanner.style.borderColor = "rgba(45,122,58,0.6)";
     srnBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
