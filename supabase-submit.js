@@ -78,12 +78,12 @@ async function verifyTurnstile(token) {
 // ─────────────────────────────────────────────
 function buildCalendlyUrl(fd, srn) {
   const url     = new URL(CALENDLY_BASE);
-  const name    = String(fd.get("name")    || "").trim();
-  const email   = String(fd.get("email")   || "").trim();
-  const service = String(fd.get("service") || "").trim();
-  const vehicle = String(fd.get("vehicle") || "").trim();
-  const address = String(fd.get("address") || "").trim();
-  const notes   = String(fd.get("notes")   || "").trim();
+  const name    = String(fd.get("full_name")         || "").trim();
+  const email   = String(fd.get("email")             || "").trim();
+  const service = String(fd.get("package_id")        || "").trim();
+  const vehicle = String(fd.get("vehicle_type")      || "").trim();
+  const address = String(fd.get("formatted_address") || "").trim();
+  const notes   = String(fd.get("special_notes")     || "").trim();
 
   if (name)  url.searchParams.set("name", name);
   if (email) url.searchParams.set("email", email);
@@ -203,13 +203,13 @@ if (form) {
     const fd  = new FormData(form);
     const geo = buildGeoPayload(fd);
 
-    const name    = String(fd.get("name")    || "").trim() || null;
-    const email   = String(fd.get("email")   || "").trim() || null;
-    const phone   = String(fd.get("phone")   || "").trim() || null;
-    const address = String(fd.get("address") || "").trim() || null;
-    const service = String(fd.get("service") || "").trim() || null;
-    const vehicle = String(fd.get("vehicle") || "").trim() || null;
-    const notes   = String(fd.get("notes")   || "").trim() || null;
+   const name    = String(fd.get("full_name")         || "").trim() || null;
+   const email   = String(fd.get("email")             || "").trim() || null;
+   const phone   = String(fd.get("phone_number")      || "").trim() || null;
+   const address = String(fd.get("formatted_address") || "").trim() || null;
+   const service = String(fd.get("package_id")        || "").trim() || null;
+   const vehicle = String(fd.get("vehicle_type")      || "").trim() || null;
+   const notes   = String(fd.get("special_notes")     || "").trim() || null;
 
     // ── Persist to localStorage (survives Calendly redirect) ──
     try {
