@@ -7,7 +7,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 // ── Config ──────────────────────────────────
-const SUPABASE_URL      = "https://mylqkbpclcrqorjctjxn.supabase.co/rest/v1/";
+const SUPABASE_URL      = "https://mylqkbpclcrqorjctjxn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg";
 const CALENDLY_BASE     = "https://calendly.com/aarmstrong1234/30min";
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xqewgnbb";
