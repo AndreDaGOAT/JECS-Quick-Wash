@@ -243,27 +243,32 @@
   }
 
   // ── Supabase capacity fetch ───────────────────
-  // Queries service_requests for the 14-day window,
-  // filtered to the user's ZIP cluster group, and
-  // aggregates used minutes per day.
+  // Joins service_requests → customers to get
+  // customers.zip_code for zone filtering.
+  //
+  // Why the join: service_requests has no zip/cluster
+  // column. ZIP lives on customers.zip_code, written
+  // correctly by supabase-submit.js v2.1.
+  //
+  // PostgREST embedded resource syntax:
+  //   select=...,customers(zip_code)
+  // returns each row with a nested customers object.
   async function fetchSchedule(zip) {
-    const t    = today();
-    const from = toDateKey(t);
-    const to   = toDateKey(new Date(t.getTime() + FORECAST_DAYS * 86_400_000));
+    const t       = today();
+    const from    = toDateKey(t);
+    const to      = toDateKey(new Date(t.getTime() + FORECAST_DAYS * 86_400_000));
+    const clusters = clusterGroup(zip); // e.g. ["371xx","372xx","373xx"]
 
-    // Build all cluster prefixes to match against
-    const clusters = clusterGroup(zip);
-    // We'll filter client-side since Supabase REST doesn't do regex easily
-
-    const query = new URLSearchParams({
-      select:         "requested_date,package_id,cluster_key,status",
+    // Build query — join customers to get zip_code
+    const params = new URLSearchParams({
+      select:         "requested_date,package_id,status,customers(zip_code)",
       requested_date: `gte.${from}`,
       status:         "neq.cancelled",
     });
 
     try {
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/service_requests?${query}&requested_date=lte.${to}`,
+        `${SUPABASE_URL}/rest/v1/service_requests?${params}&requested_date=lte.${to}`,
         {
           headers: {
             "apikey":        SUPABASE_ANON_KEY,
@@ -276,15 +281,17 @@
 
       const agg = {};
       rows.forEach(row => {
-        const dateKey = row.requested_date;
+        const dateKey  = row.requested_date;
         if (!dateKey) return;
 
-        // Determine if this row belongs to our cluster group
-        const ck     = row.cluster_key || "unzoned";
-        const prefix = ck.replace("xx", "").slice(0, 3);
-        const inZone = clusters.some(c => c.replace("xx", "") === prefix)
-                    || ck === (zip || "unzoned")
-                    || ck === "unzoned";
+        // Extract zip from the joined customers object
+        const rowZip   = row.customers?.zip_code || null;
+
+        // Zone match: rowZip falls within the adjacent cluster group
+        const rowPrefix = rowZip ? rowZip.slice(0, 3) : null;
+        const inZone = !rowZip                // no ZIP → include (don't exclude unknowns)
+          || clusters.some(c => c.replace("xx", "") === rowPrefix);
+
         if (!inZone) return;
 
         if (!agg[dateKey]) agg[dateKey] = { usedMin: 0, jobCount: 0, hasFleet: false };
@@ -294,7 +301,7 @@
           agg[dateKey].hasFleet = true;
           agg[dateKey].usedMin  = DAY_MINUTES;
         } else {
-          agg[dateKey].usedMin  += dur + TRAVEL_BUFFER;
+          agg[dateKey].usedMin += dur + TRAVEL_BUFFER;
         }
         agg[dateKey].jobCount++;
       });
