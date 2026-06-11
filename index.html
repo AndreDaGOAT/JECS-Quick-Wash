@@ -95,7 +95,8 @@
             <input type="tel" id="phoneInput" name="phone_number" placeholder="Phone Number" />
 
             <input id="address" type="text" name="formatted_address" placeholder="Workplace or Parking Location" required />
-            <input type="text" name="zip_code" placeholder="ZIP Code" inputmode="numeric" />
+            <!-- ZIP auto-populated from Google Places address_components — not shown to client -->
+            <input type="hidden" name="zip_code" />
 
             <select name="package_id" required>
               <option value="">-- Select Service Package --</option>
