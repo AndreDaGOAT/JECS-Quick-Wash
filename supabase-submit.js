@@ -3,23 +3,13 @@
    Phase 2: Multi-table insert flow
    Tables: customers → vehicles → service_requests
    + captcha_logs
-
-   Fixes applied (v2.1):
-   • requested_date now reads the customer-selected
-     calendar date (fd.get("requested_date")), not
-     new Date() at submission time
-   • buildGeoPayload reads "formatted_address" (the
-     correct field name) — ZIP was always null before
-   • cluster_key removed from service_requests insert
-     (column does not exist in schema); ZIP lives on
-     customers.zip_code and is used for routing queries
    ============================================= */
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 // ── Config ──────────────────────────────────
-const SUPABASE_URL       = "https://mylqkbpclcrqorjctjxn.supabase.co";
-const SUPABASE_ANON_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg";
-const CALENDLY_BASE      = "https://calendly.com/aarmstrong1234/30min";
+const SUPABASE_URL      = "https://mylqkbpclcrqorjctjxn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg";
+const CALENDLY_BASE     = "https://calendly.com/aarmstrong1234/30min";
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xqewgnbb";
 
 // ── Supabase Client ──────────────────────────
@@ -40,10 +30,10 @@ const srnDisplay  = document.getElementById("srnDisplay");
 //    Format: JECS-YYYYMMDD-HHMMSS-XXXX
 // ─────────────────────────────────────────────
 function generateSrn() {
-  const now   = new Date();
-  const pad   = (n, w = 2) => String(n).padStart(w, "0");
-  const date  = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-  const time  = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const now  = new Date();
+  const pad  = (n, w = 2) => String(n).padStart(w, "0");
+  const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const rand4 = Math.floor(1000 + Math.random() * 9000);
   return `JECS-${date}-${time}-${rand4}`;
 }
@@ -94,12 +84,11 @@ function buildCalendlyUrl(fd, srn) {
   const vehicle = String(fd.get("vehicle_type")      || "").trim();
   const address = String(fd.get("formatted_address") || "").trim();
   const notes   = String(fd.get("special_notes")     || "").trim();
-  const reqDate = String(fd.get("requested_date")    || "").trim();
 
-  if (name)  url.searchParams.set("name",  name);
+  if (name)  url.searchParams.set("name", name);
   if (email) url.searchParams.set("email", email);
 
-  url.searchParams.set("a1", `SRN: ${srn} | Service: ${service}${vehicle ? ` | Vehicle: ${vehicle}` : ""}${reqDate ? ` | Date: ${reqDate}` : ""}`);
+  url.searchParams.set("a1", `SRN: ${srn} | Service: ${service}${vehicle ? ` | Vehicle: ${vehicle}` : ""}`);
   url.searchParams.set("a2", address);
   url.searchParams.set("a3", notes || "(no additional notes)");
 
@@ -107,56 +96,40 @@ function buildCalendlyUrl(fd, srn) {
 }
 
 // ─────────────────────────────────────────────
-// 4. GEO HELPER
-//    Extracts coordinates and ZIP from form data.
-//    FIX: was reading "address" — correct field is
-//    "formatted_address" (matches the input name).
-//    ZIP is also read from the dedicated zip_code
-//    input as a more reliable source.
+// 4. GEO / CLUSTER HELPER
+//    cluster_key groups requests by ZIP for
+//    efficient route dispatch
 // ─────────────────────────────────────────────
 function buildGeoPayload(fd) {
   const lat     = parseFloat(fd.get("latitude"));
   const lng     = parseFloat(fd.get("longitude"));
-
-  // Prefer the explicit zip_code input; fall back to
-  // parsing it out of the formatted address string.
-  const explicitZip = String(fd.get("zip_code") || "").trim();
-  const address     = String(fd.get("formatted_address") || "").trim(); // ← was "address"
-  const zipMatch    = address.match(/\b(\d{5})(?:-\d{4})?\b/);
-  const zipCode     = explicitZip || (zipMatch ? zipMatch[1] : null);
+  const address = String(fd.get("address") || "").trim();
+  const zipMatch = address.match(/\b(\d{5})(?:-\d{4})?\b/);
+  const zipCode  = zipMatch ? zipMatch[1] : null;
 
   return {
-    latitude:  isFinite(lat) ? lat : null,
-    longitude: isFinite(lng) ? lng : null,
-    place_id:  fd.get("google_place_id") || fd.get("place_id") || null,
-    zip_code:  zipCode,
+    latitude:    isFinite(lat) ? lat : null,
+    longitude:   isFinite(lng) ? lng : null,
+    place_id:    fd.get("place_id") || null,
+    zip_code:    zipCode,
+    cluster_key: zipCode || "unzoned",
   };
 }
 
 // ─────────────────────────────────────────────
 // 5. PACKAGE LOOKUP
-//    Resolves the form select value to a UUID
-//    from the service_packages table.
-//    NOTE: form select values are UUIDs directly
-//    (e.g. "package-uuid-0001") — we pass them
-//    through as-is and also support name lookup
-//    for backward compatibility.
+//    Resolves the human-readable service selection
+//    to a package_id UUID from service_packages
 // ─────────────────────────────────────────────
+
+// Maps form select values to package_name values in service_packages table
 const SERVICE_PACKAGE_MAP = {
-  "quick-wash":  "Quick Wash",
-  "wash-vacuum": "Wash + Vacuum",
-  "fleet":       "Fleet Service",
+  "quick-wash":   "Quick Wash",
+  "wash-vacuum":  "Wash + Vacuum",
+  "fleet":        "Fleet Service",
 };
 
 async function resolvePackageId(serviceValue) {
-  if (!serviceValue) return null;
-
-  // If the value already looks like a UUID (or our uuid-stub format), use it directly
-  if (/^[0-9a-f-]{8,}$/i.test(serviceValue) || serviceValue.startsWith("package-uuid-")) {
-    return serviceValue;
-  }
-
-  // Otherwise look up by package_name
   const packageName = SERVICE_PACKAGE_MAP[serviceValue];
   if (!packageName) return null;
 
@@ -180,7 +153,7 @@ async function resolvePackageId(serviceValue) {
 function setStatus(msg, type = "info") {
   if (!formMessage) return;
   formMessage.textContent = msg;
-  formMessage.className   = `form-status ${type}`;
+  formMessage.className = `form-status ${type}`;
 }
 
 function setLoading(loading) {
@@ -188,7 +161,7 @@ function setLoading(loading) {
   const textEl    = submitBtn.querySelector(".btn-text");
   const loadingEl = submitBtn.querySelector(".btn-loading");
   submitBtn.disabled = loading;
-  if (textEl)    textEl.style.display    = loading ? "none"   : "inline";
+  if (textEl)    textEl.style.display    = loading ? "none" : "inline";
   if (loadingEl) loadingEl.style.display = loading ? "inline" : "none";
 }
 
@@ -204,17 +177,6 @@ if (form) {
 
     if (!form.checkValidity()) {
       form.reportValidity();
-      return;
-    }
-
-    // ── Guard: require a date selection ──
-    const rawDate = String(
-      document.querySelector('[name="requested_date"]')?.value || ""
-    ).trim();
-    if (!rawDate) {
-      setStatus("Please select a wash date from the calendar above.", "error");
-      document.getElementById("jecsWeatherCal")
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -241,24 +203,20 @@ if (form) {
     const fd  = new FormData(form);
     const geo = buildGeoPayload(fd);
 
-    const name    = String(fd.get("full_name")         || "").trim() || null;
-    const email   = String(fd.get("email")             || "").trim() || null;
-    const phone   = String(fd.get("phone_number")      || "").trim() || null;
-    const address = String(fd.get("formatted_address") || "").trim() || null;
-    const service = String(fd.get("package_id")        || "").trim() || null;
-    const vehicle = String(fd.get("vehicle_type")      || "").trim() || null;
-    const notes   = String(fd.get("special_notes")     || "").trim() || null;
-
-    // ── Read customer-selected date from calendar ──
-    // FIX: was new Date().toISOString().split("T")[0] (always today)
-    const requestedDate = rawDate; // "YYYY-MM-DD" written by weather-calendar.js
+   const name    = String(fd.get("full_name")         || "").trim() || null;
+   const email   = String(fd.get("email")             || "").trim() || null;
+   const phone   = String(fd.get("phone_number")      || "").trim() || null;
+   const address = String(fd.get("formatted_address") || "").trim() || null;
+   const service = String(fd.get("package_id")        || "").trim() || null;
+   const vehicle = String(fd.get("vehicle_type")      || "").trim() || null;
+   const notes   = String(fd.get("special_notes")     || "").trim() || null;
 
     // ── Persist to localStorage (survives Calendly redirect) ──
     try {
       localStorage.setItem("jecs_last_srn", srn);
       localStorage.setItem("jecs_submission_ts", Date.now().toString());
       localStorage.setItem("jecs_last_payload", JSON.stringify({
-        srn, name, email, phone, address, service, vehicle, notes, geo, requestedDate,
+        srn, name, email, phone, address, service, vehicle, notes, geo,
       }));
     } catch (_) { /* quota exceeded — non-fatal */ }
 
@@ -266,8 +224,8 @@ if (form) {
 
     // ── Parallel: Formspree backup ──
     const formspreePromise = fetch(FORMSPREE_ENDPOINT, {
-      method:  "POST",
-      body:    fd,
+      method: "POST",
+      body: fd,
       headers: { Accept: "application/json" },
     });
 
@@ -282,7 +240,7 @@ if (form) {
         phone_number:      phone,
         formatted_address: address,
         google_place_id:   geo.place_id,
-        zip_code:          geo.zip_code,   // ← correctly populated now
+        zip_code:          geo.zip_code,
         latitude:          geo.latitude,
         longitude:         geo.longitude,
         created_at:        new Date().toISOString(),
@@ -317,7 +275,7 @@ if (form) {
 
       if (vehicleError || !vehicleData) {
         console.warn("[JECS] vehicles insert failed:", vehicleError?.message);
-        // Non-fatal — service request proceeds without vehicle_id
+        // Non-fatal — service request can proceed without vehicle_id
       } else {
         vehicleId = vehicleData.vehicle_id;
       }
@@ -337,12 +295,9 @@ if (form) {
         package_id:             packageId,
         special_notes:          notes,
         status:                 "pending_calendly",
-        // FIX: use the date the customer selected, not submission timestamp
-        requested_date:         requestedDate,
+        cluster_key:            geo.cluster_key,
+        requested_date:         new Date().toISOString().split("T")[0],
         created_at:             new Date().toISOString(),
-        // NOTE: cluster_key is not a column on service_requests.
-        // ZIP-based routing is derived via customers.zip_code
-        // in the scheduling query (weather-calendar.js fetchSchedule).
       })
       .select("request_id")
       .single();
@@ -356,8 +311,7 @@ if (form) {
 
     // ── Evaluate Formspree result ──
     const formspreeResult = await Promise.allSettled([formspreePromise]);
-    const formspreeOk = formspreeResult[0].status === "fulfilled"
-                     && formspreeResult[0].value.ok;
+    const formspreeOk = formspreeResult[0].status === "fulfilled" && formspreeResult[0].value.ok;
     if (!formspreeOk) {
       console.warn("[JECS] Formspree backup failed — Supabase succeeded, continuing.");
     }
@@ -402,6 +356,7 @@ if (form) {
   const fromCalendly = document.referrer.includes("calendly.com");
   if (!fromCalendly && !params.get("srn")) return;
 
+  // Update status on service_requests (correct table)
   try {
     await supabase
       .from("service_requests")
@@ -409,11 +364,12 @@ if (form) {
       .eq("service_request_number", returnedSrn);
   } catch (_) { /* non-fatal */ }
 
+  // Show confirmation banner
   if (srnBanner && srnDisplay) {
     srnDisplay.textContent = returnedSrn;
     const srnNote = srnBanner.querySelector(".srn-note");
     if (srnNote) srnNote.textContent = "✓ Scheduling complete — check your email for confirmation.";
-    srnBanner.style.display  = "flex";
+    srnBanner.style.display = "flex";
     srnBanner.style.borderColor = "rgba(45,122,58,0.6)";
     srnBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
