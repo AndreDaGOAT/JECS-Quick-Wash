@@ -8,19 +8,20 @@ const settings = {
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg",
 };
 
-const washForm = document.getElementById("customerForm");
-const formMessage = document.getElementById("formMessage");
-const yearLabel = document.getElementById("year");
+const washForm          = document.getElementById("customerForm");
+const formMessage       = document.getElementById("formMessage");
+const yearLabel         = document.getElementById("year");
 const businessNameLabel = document.getElementById("businessName");
-const addressInput = document.getElementById("address");
-const latInput = document.getElementById("lat");
-const lngInput = document.getElementById("lng");
-const placeIdInput = document.getElementById("placeId");
-const locationHint = document.getElementById("locationHint");
+const addressInput      = document.getElementById("address");
+const latInput          = document.getElementById("lat");
+const lngInput          = document.getElementById("lng");
+const placeIdInput      = document.getElementById("placeId");
+const zipInput          = document.querySelector('[name="zip_code"]');
+const locationHint      = document.getElementById("locationHint");
 
-if (yearLabel) yearLabel.textContent = String(new Date().getFullYear());
+if (yearLabel)         yearLabel.textContent         = String(new Date().getFullYear());
 if (businessNameLabel) businessNameLabel.textContent = settings.businessName;
-if (washForm) washForm.action = settings.formspreeEndpoint;
+if (washForm)          washForm.action               = settings.formspreeEndpoint;
 
 function getLocation() {
   if (!navigator.geolocation) return;
@@ -34,23 +35,38 @@ getLocation();
 
 window.initGooglePlaces = function initGooglePlaces() {
   if (!window.google?.maps?.places || !addressInput) {
-    if (locationHint) locationHint.textContent = "Google Places unavailable. Enter your full location manually.";
+    if (locationHint) locationHint.textContent =
+      "Google Places unavailable. Enter your full location manually.";
     return;
   }
 
   const autocomplete = new google.maps.places.Autocomplete(addressInput, {
-    fields: ["formatted_address", "geometry", "place_id"],
-    types: ["address"],
+    // Added "address_components" so we can extract the postal_code component.
+    // All other fields are unchanged.
+    fields: ["formatted_address", "geometry", "place_id", "address_components"],
+    types:  ["address"],
   });
 
   autocomplete.addListener("place_changed", () => {
     const place = autocomplete.getPlace();
     if (!place?.formatted_address) return;
+
     addressInput.value = place.formatted_address;
+
     if (placeIdInput) placeIdInput.value = place.place_id || "";
+
     if (place.geometry?.location) {
       if (latInput) latInput.value = String(place.geometry.location.lat());
       if (lngInput) lngInput.value = String(place.geometry.location.lng());
+    }
+
+    // Extract ZIP (postal_code) from address_components and write it to
+    // the hidden zip_code field — no manual entry required from the client.
+    if (zipInput && Array.isArray(place.address_components)) {
+      const postalComponent = place.address_components.find(
+        (c) => c.types.includes("postal_code")
+      );
+      zipInput.value = postalComponent ? postalComponent.short_name : "";
     }
   });
 };
