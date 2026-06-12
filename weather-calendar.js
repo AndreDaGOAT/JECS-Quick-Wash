@@ -263,16 +263,19 @@
     const to      = toDateKey(new Date(t.getTime() + FORECAST_DAYS * 86_400_000));
     const clusters = clusterGroup(zip); // e.g. ["371xx","372xx","373xx"]
 
-    // Build query — join customers to get zip_code
-    const params = new URLSearchParams({
-      select:         "requested_date,package_id,status,customers(zip_code)",
-      requested_date: `gte.${from}`,
-      status:         "neq.cancelled",
-    });
+    // URLSearchParams encodes parentheses as %28%29 which breaks
+    // PostgREST's embedded resource syntax customers(zip_code) → 400.
+    // Build the query string manually to keep parentheses literal.
+    const qs = [
+      `select=requested_date,package_id,status,customers(zip_code)`,
+      `requested_date=gte.${from}`,
+      `requested_date=lte.${to}`,
+      `status=neq.cancelled`,
+    ].join("&");
 
     try {
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/service_requests?${params}&requested_date=lte.${to}`,
+        `${SUPABASE_URL}/rest/v1/service_requests?${qs}`,
         {
           headers: {
             "apikey":        SUPABASE_ANON_KEY,
