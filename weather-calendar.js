@@ -239,6 +239,10 @@
         ...weatherTier(score),
       };
     });
+    // Store forecast in sessionStorage so supabase-submit.js can
+    // include the weather note for the selected date in the
+    // confirmation email without needing a second API call.
+    try { sessionStorage.setItem("jecs_forecast", JSON.stringify(out)); } catch (_) {}
     return out;
   }
 
