@@ -86,45 +86,54 @@
         <div class="container two-col">
           <div>
             <h2>Request Wash</h2>
-            <p>Enter your contact and location details. We capture address + GPS coordinates for route planning and queue management.</p>
+            <p>Enter your details below. We'll confirm your booking by email and our tech will arrive within your chosen time window.</p>
           </div>
 
-          <form id="customerForm" class="form" action="https://formspree.io/f/xqewgnbb" method="POST" novalidate>
-            <input type="text" name="full_name" placeholder="Full Name" required />
-            <input type="email" name="email" placeholder="Email" required />
-            <input type="tel" id="phoneInput" name="phone_number" placeholder="Phone Number" />
+          <form id="customerForm" class="form" novalidate>
+            <input type="text"  name="full_name"    placeholder="Full Name"    required />
+            <input type="email" name="email"        placeholder="Email"        required />
+            <input type="tel"   name="phone_number" placeholder="Phone Number" id="phoneInput" />
 
-            <input id="address" type="text" name="formatted_address" placeholder="Workplace or Parking Location" required />
-            <!-- ZIP auto-populated from Google Places address_components — not shown to client -->
+            <input id="address" type="text" name="formatted_address"
+                   placeholder="Workplace or Parking Location" required />
+            <!-- ZIP auto-populated from Google Places address_components -->
             <input type="hidden" name="zip_code" />
 
             <select name="package_id" required>
               <option value="">-- Select Service Package --</option>
               <option value="package-uuid-0001">Quick Wash</option>
               <option value="package-uuid-0002">Wash + Vacuum</option>
-              <option value="package-uuid-0003">Fleet & Commercial</option>
+              <option value="package-uuid-0003">Fleet &amp; Commercial</option>
             </select>
 
-            <textarea name="special_notes" id="notes" rows="4" placeholder="Vehicle details or instructions"></textarea>
+            <textarea name="special_notes" id="notes" rows="4"
+                      placeholder="Vehicle details or special instructions"></textarea>
 
+            <!-- requested_date is hidden — set by weather-calendar.js -->
             <input type="date" name="requested_date" />
+
             <select name="preferred_time_window">
               <option value="">Preferred Time Window (Optional)</option>
-              <option value="8AM-11AM">8AM-11AM</option>
-              <option value="11AM-2PM">11AM-2PM</option>
-              <option value="2PM-5PM">2PM-5PM</option>
+              <option value="8AM-11AM">8AM – 11AM</option>
+              <option value="11AM-2PM">11AM – 2PM</option>
+              <option value="2PM-5PM">2PM – 5PM</option>
             </select>
-            <input type="text" name="vehicle_type" placeholder="Vehicle Type (Sedan, SUV, Truck)" />
 
-            <input type="hidden" id="lat" name="latitude" />
-            <input type="hidden" id="lng" name="longitude" />
+            <input type="text" name="vehicle_type"
+                   placeholder="Vehicle Type (Sedan, SUV, Truck)" />
+
+            <!-- Hidden geo fields populated by script.js -->
+            <input type="hidden" id="lat"     name="latitude" />
+            <input type="hidden" id="lng"     name="longitude" />
             <input type="hidden" id="placeId" name="google_place_id" />
             <input type="hidden" id="serviceRequestId" name="service_request_id" />
-            <input type="hidden" id="calendlyUrl" name="calendly_url" value="https://calendly.com/aarmstrong1234/30min" />
 
             <div class="cf-turnstile" data-sitekey="0x4AAAAAADOPeJJPfrSYL0Wg"></div>
 
-            <button class="btn btn-primary" type="submit">Request My Wash</button>
+            <button class="btn btn-primary" id="submitBtn" type="submit">
+              <span class="btn-text">Request My Wash</span>
+              <span class="btn-loading" style="display:none">Submitting…</span>
+            </button>
             <p id="locationHint" class="hint">Allow location access for faster dispatch accuracy.</p>
             <p id="formMessage" class="hint" role="status" aria-live="polite"></p>
           </form>
@@ -135,7 +144,7 @@
         <div class="container two-col">
           <div>
             <h2>Operations Model</h2>
-            <p>Form entries are designed to flow into a spatial database so JECS staff can batch nearby requests, assign routes, and track service coverage.</p>
+            <p>Form entries flow into a spatial database so JECS staff can batch nearby requests, assign routes, and track service coverage.</p>
           </div>
           <div class="card">
             <h3>Data Flow</h3>
@@ -153,7 +162,7 @@
 
     <footer class="site-footer">
       <div class="container footer-wrap">
-        <p>© <span id="year"></span> <span id="businessName">JECS Quick Wash</span></p>
+        <p>&copy; <span id="year"></span> <span id="businessName">JECS Quick Wash</span></p>
       </div>
     </footer>
 
