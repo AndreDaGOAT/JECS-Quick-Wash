@@ -447,7 +447,7 @@ if (form) {
         zip_code:          geo.zip_code,
         latitude:          geo.latitude,
         longitude:         geo.longitude,
-        created_at:        new Date().toISOString(),
+        // created_at omitted — Supabase column default (now()) handles it in UTC
       })
       .select("customer_id")
       .single();
@@ -474,7 +474,7 @@ if (form) {
         .insert({
           customer_id:  customerId,
           vehicle_type: vehicle,
-          created_at:   new Date().toISOString(),
+          // created_at omitted — Supabase column default handles it
         })
         .select("vehicle_id")
         .single();
@@ -500,7 +500,8 @@ if (form) {
         special_notes:          notes,
         status:                 "pending_confirmation",
         requested_date:         requestedDate,
-        created_at:             new Date().toISOString(),
+        client_timezone:        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        // created_at omitted — Supabase column default handles it in UTC
       })
       .select("request_id")
       .single();
