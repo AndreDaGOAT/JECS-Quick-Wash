@@ -224,29 +224,52 @@ function buildGeoPayload(fd) {
 
 // ─────────────────────────────────────────────
 // 6. PACKAGE LOOKUP
+//    Maps form select values to real UUIDs in the
+//    service_packages table via package_name.
+//    "package-uuid-000x" stubs in the form select
+//    are NOT valid UUIDs — always look up by name.
+//    If the lookup fails, insert proceeds with
+//    package_id = null (non-fatal for build phase).
 // ─────────────────────────────────────────────
+
+// Maps form select option values to service_packages.package_name
 const SERVICE_PACKAGE_MAP = {
-  "quick-wash":  "Quick Wash",
-  "wash-vacuum": "Wash + Vacuum",
-  "fleet":       "Fleet Service",
+  "package-uuid-0001": "Quick Wash",
+  "package-uuid-0002": "Wash + Vacuum",
+  "package-uuid-0003": "Fleet & Commercial",
+  // legacy slug keys kept for safety
+  "quick-wash":        "Quick Wash",
+  "wash-vacuum":       "Wash + Vacuum",
+  "fleet":             "Fleet & Commercial",
 };
 
 async function resolvePackageId(serviceValue) {
   if (!serviceValue) return null;
-  if (/^[0-9a-f-]{8,}$/i.test(serviceValue) || serviceValue.startsWith("package-uuid-")) {
-    return serviceValue;
-  }
+
+  // Always look up by name — stub values like "package-uuid-0002"
+  // are NOT real UUIDs and will cause a Postgres type error if inserted.
   const packageName = SERVICE_PACKAGE_MAP[serviceValue];
-  if (!packageName) return null;
+  if (!packageName) {
+    console.warn("[JECS] No package name mapping for value:", serviceValue);
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("service_packages")
     .select("package_id")
     .eq("package_name", packageName)
-    .single();
-  if (error || !data) {
-    console.warn("[JECS] Could not resolve package_id:", serviceValue, error?.message);
+    .maybeSingle(); // maybeSingle returns null instead of error when no row found
+
+  if (error) {
+    console.warn("[JECS] package lookup error:", error.code, error.message);
     return null;
   }
+  if (!data) {
+    console.warn("[JECS] No row found in service_packages for name:", packageName,
+      "— insert will proceed with package_id = null.");
+    return null;
+  }
+
   return data.package_id;
 }
 
@@ -465,6 +488,7 @@ if (form) {
 
     // ── STEP 3: service_requests ───────────────
     const packageId = await resolvePackageId(service);
+    console.info("[JECS] Resolved package_id:", packageId, "from service value:", service);
 
     const { data: srData, error: srError } = await supabase
       .from("service_requests")
