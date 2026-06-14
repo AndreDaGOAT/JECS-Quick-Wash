@@ -1,81 +1,90 @@
-diff --git a/README.md b/README.md
-index 3f51556bdac43f16bf115da8792db6ab1c5d1532..29d92262c06ed305d1ca343982da03cb0f927ff8 100644
---- a/README.md
-+++ b/README.md
-@@ -1,10 +1,66 @@
--- 👋 Hi, I’m @AndreDaGOAT
--- 👀 I’m interested in programming, data analystics, AI coding..
--- 🌱 I’m currently learning Python, AI coding enhancements...
--- 💞️ I’m looking to collaborate on GIS integrations, python best practices, AI enhancing...
--- 📫 How to reach me aarmstrong1234@gmail.com...
--
--<!---
--AndreDaGOAT/AndreDaGOAT is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
--You can click the Preview link to take a look at your changes.
----->
-+# JECS Quick Wash (GitHub Pages)
-+
-+JECS Quick Wash is a mobile, location-first wash request system focused on workplaces and high-traffic parking locations.
-+
-+## Service model shift
-+
-+- Brand renamed to **JECS Quick Wash**.
-+- UX changed to a simple **Request Wash** workflow (no calendar-first flow).
-+- Form captures **address + GPS coordinates** to support dispatch and routing.
-+- Architecture supports **Formspree (temporary)** plus **Supabase/PostGIS (target)**.
-+
-+## Current stack
-+
-+- `index.html` — homepage, services, request form, operations model
-+- `about.html` — history and mission
-+- `script.js` — geolocation capture and Google Places autocomplete
-+- `supabase-submit.js` — module-based CAPTCHA-gated dual submit to Formspree + Supabase
-+- `styles.css` — existing UI system
-+
-+## Required integrations
-+
-+- Form endpoint: `https://formspree.io/f/xqewgnbb`
-+- Google Places API script with `libraries=places`
-+- Optional Supabase REST values in `script.js`:
-+  - `supabaseUrl`
-+  - `supabaseAnonKey`
-+
-+## Suggested Supabase table
-+
-+Table: `wash_requests`
-+- `id` uuid primary key
-+- `name` text
-+- `email` text
-+- `phone` text
-+- `address` text
-+- `service` text
-+- `notes` text
-+- `latitude` double precision
-+- `longitude` double precision
-+- `place_id` text
-+- `created_at` timestamp default now()
-+
-+Then add PostGIS geometry column for map routing and queue dashboards.
-+
-+## MVP reliability upgrades for jecsquickwash.github.io
-+
-+- **Service Request Number (SRN)** is generated client-side before insert using format: `JECS-YYYYMMDD-HHMMSS-RANDOM4`.
-+- SRN is posted to Formspree + Supabase and persisted in localStorage for redirect continuity.
-+- **Calendly reintegration**: after successful submit, user is redirected to `https://calendly.com/aarmstrong1234/30min` with SRN/service/location/notes passed into Calendly custom answers.
-+- **CAPTCHA**: Cloudflare Turnstile widget is included with site key `0x4AAAAAADOPeJJPfrSYL0Wg`.
-+- **Server-side CAPTCHA validation**: implemented via Supabase Edge Function call `verify-turnstile` from `supabase-submit.js`.
-+
-+### Required backend task
-+
-+Create a Supabase Edge Function named `verify-turnstile` that validates Turnstile token using your secret key and returns `{ success: true/false }`.
-+Without this function, form submission will be blocked by CAPTCHA validation.
-+
-+
-+If Edge Function is unavailable, frontend now allows token-based fallback so requests are not blocked in MVP testing; restore strict server-side enforcement in production.
-+
-+
-+## Enterprise schema alignment updates
-+
-+- Form fields now align to enterprise columns: `full_name`, `phone_number`, `formatted_address`, `google_place_id`, `zip_code`, `package_name`, `vehicle_type`, `requested_date`, `preferred_time_window`, `special_notes`.
-+- Frontend now sends request payload to Supabase Edge Function `create-service-request` (recommended for RLS-safe writes across `customers`, `vehicles`, and `service_requests`).
-+- If edge create fails, request still posts to Formspree and continues to Calendly so client experience remains smooth.
+# JECS Quick Wash - Admin Portal
+
+A modern React-based admin dashboard for managing car wash bookings, customer data, and service requests.
+
+## Features
+
+✅ **Dashboard Overview** - Key metrics and recent activity
+✅ **Customers Management** - View, edit, and manage customer records
+✅ **Appointments** - Track and manage car wash appointments
+✅ **Service Requests** - Handle special service inquiries
+✅ **Employees** - Manage staff profiles
+✅ **Profiles** - User profile management
+✅ **Subscriptions** - Track customer subscriptions
+✅ **Real-time Search** - Filter records instantly
+✅ **CRUD Operations** - Create, read, edit, and archive records
+✅ **Schema Discovery** - Automatic column detection
+
+## Quick Start
+
+### Prerequisites
+- Node.js 14+ and npm
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+```
+
+The app will open at `http://localhost:3000`
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+## Authentication
+
+The admin portal uses email-based authentication. Only authorized emails can access the dashboard:
+
+- `concierge@jubileeexecutivecarservice.com`
+- `contact@jubileeexecutivecarservice.com`
+- `aarmstrong1234@gmail.com`
+
+## Database
+
+Connects to Supabase for real-time data management. The following tables are supported:
+
+- customers
+- appointments
+- service_requests
+- employees
+- profiles
+- subscriptions
+
+## Tech Stack
+
+- **React 18** - UI framework
+- **Supabase** - Backend & database
+- **Inline Styles** - No CSS framework, pure React styling
+- **SVG Icons** - Lightweight icon set
+
+## Architecture
+
+The app uses a single-file component architecture with:
+
+- **Design Tokens** - Centralized color and style definitions
+- **Helper Functions** - Smart column formatting and detection
+- **Generic Table View** - Reusable component for all tables
+- **Modal System** - Create/edit records with form validation
+- **Dashboard Tab** - Overview with metrics and recent activity
+
+## Project Structure
+
+```
+src/
+├── App.jsx           # Main application component
+├── index.js          # React entry point
+public/
+├── index.html        # HTML template
+package.json          # Dependencies and scripts
+```
+
+## Support
+
+For issues or feature requests, please contact the development team.
