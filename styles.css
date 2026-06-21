@@ -360,6 +360,51 @@ textarea:focus {
   text-decoration-color: rgba(127, 91, 41, 0.45);
 }
 
+.vehicle-picker {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.vehicle-picker-label {
+  margin: 0;
+  font-weight: 600;
+  color: #273148;
+  font-size: 0.9rem;
+}
+
+.vehicle-picker-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.vehicle-picker-row:has(#vp_color) {
+  grid-template-columns: 1fr 1fr;
+}
+
+.vehicle-picker select:disabled {
+  background: #f5f0e6;
+  color: #a89a82;
+  cursor: not-allowed;
+}
+
+.vehicle-picker select.vp-loading {
+  background-image: none;
+}
+
+.vehicle-picker-hint {
+  font-size: 0.78rem;
+  color: var(--gold-600);
+  margin: -0.2rem 0 0;
+}
+
+@media (max-width: 600px) {
+  .vehicle-picker-row,
+  .vehicle-picker-row:has(#vp_color) {
+    grid-template-columns: 1fr;
+  }
+}
+
 .site-footer {
   background: linear-gradient(180deg, #121b2d 0%, #0a1020 100%);
   color: #ecdfc8;

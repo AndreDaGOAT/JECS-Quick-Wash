@@ -119,8 +119,40 @@
               <option value="2PM-5PM">2PM – 5PM</option>
             </select>
 
-            <input type="text" name="vehicle_type"
-                   placeholder="Vehicle Type (Sedan, SUV, Truck)" />
+            <div class="vehicle-picker" id="vehiclePicker">
+              <p class="vehicle-picker-label">Your Vehicle</p>
+
+              <div class="vehicle-picker-row">
+                <select id="vp_year" name="vehicle_year" aria-label="Vehicle Year">
+                  <option value="">Year</option>
+                </select>
+
+                <select id="vp_make" name="vehicle_make" aria-label="Vehicle Make" disabled>
+                  <option value="">Make</option>
+                </select>
+
+                <select id="vp_model" name="vehicle_model" aria-label="Vehicle Model" disabled>
+                  <option value="">Model</option>
+                </select>
+              </div>
+
+              <!-- Shown automatically if the live vehicle lookup is unavailable -->
+              <div class="vehicle-picker-row vehicle-picker-fallback" id="vp_fallback_row" style="display:none">
+                <input type="text" id="vp_make_text" name="vehicle_make_text" placeholder="Make (e.g. Honda)" />
+                <input type="text" id="vp_model_text" name="vehicle_model_text" placeholder="Model (e.g. Civic)" />
+              </div>
+              <p class="hint vehicle-picker-hint" id="vp_fallback_hint" style="display:none">
+                We couldn't reach the vehicle database — no problem, just type your make and model above.
+              </p>
+
+              <div class="vehicle-picker-row">
+                <input type="text" id="vp_color" name="vehicle_color" placeholder="Color (e.g. Silver)" />
+                <input type="text" id="vp_plate" name="license_plate" placeholder="License Plate" maxlength="12" />
+              </div>
+            </div>
+
+            <!-- Combined readable summary kept for backward compatibility / staff readability -->
+            <input type="hidden" name="vehicle_type" id="vehicleTypeSummary" />
 
             <!-- Hidden geo fields populated by script.js -->
             <input type="hidden" id="lat"     name="latitude" />
@@ -168,6 +200,7 @@
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZAA619g3JlruK77Lfm8vlopcR76vRGg&libraries=places&callback=initGooglePlaces" async defer></script>
     <script src="script.js"></script>
+    <script src="vehicle-picker.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script type="module" src="supabase-submit.js"></script>
     <script src="weather-calendar.js"></script>

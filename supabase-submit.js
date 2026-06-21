@@ -412,6 +412,13 @@ if (form) {
     const address    = String(fd.get("formatted_address")     || "").trim() || null;
     const service    = String(fd.get("package_id")            || "").trim() || null;
     const vehicle    = String(fd.get("vehicle_type")          || "").trim() || null;
+    const vehicleYear  = String(fd.get("vehicle_year")  || "").trim() || null;
+    const vehicleMakeText  = String(fd.get("vehicle_make_text")  || "").trim();
+    const vehicleModelText = String(fd.get("vehicle_model_text") || "").trim();
+    const vehicleMake  = String(fd.get("vehicle_make")  || "").trim() || vehicleMakeText  || null;
+    const vehicleModel = String(fd.get("vehicle_model") || "").trim() || vehicleModelText || null;
+    const vehicleColor = String(fd.get("vehicle_color") || "").trim() || null;
+    const licensePlate = String(fd.get("license_plate") || "").trim().toUpperCase() || null;
     const notes      = String(fd.get("special_notes")         || "").trim() || null;
     const timeWindow = String(fd.get("preferred_time_window") || "").trim() || null;
     const requestedDate = rawDate;
@@ -467,13 +474,25 @@ if (form) {
     const customerId = customerData.customer_id;
 
     // ── STEP 2: vehicles ───────────────────────
+    // hasVehicleInfo: true if the client filled in ANY part of the
+    // guided picker (year/make/model/color/plate) or the legacy
+    // vehicle_type fallback, so we don't insert an empty row.
+    const hasVehicleInfo = !!(
+      vehicle || vehicleYear || vehicleMake || vehicleModel || vehicleColor || licensePlate
+    );
+
     let vehicleId = null;
-    if (vehicle) {
+    if (hasVehicleInfo) {
       const { data: vData, error: vError } = await supabase
         .from("vehicles")
         .insert({
-          customer_id:  customerId,
-          vehicle_type: vehicle,
+          customer_id:    customerId,
+          make:           vehicleMake,
+          model:          vehicleModel,
+          year:           vehicleYear ? parseInt(vehicleYear, 10) : null,
+          color:          vehicleColor,
+          license_plate:  licensePlate,
+          vehicle_type:   vehicle, // kept for backward compatibility with existing rows/reports
           // created_at omitted — Supabase column default handles it
         })
         .select("vehicle_id")
