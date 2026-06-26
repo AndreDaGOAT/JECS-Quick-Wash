@@ -361,9 +361,10 @@ function showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, a
 //    Step 1 → customers insert
 //    Step 2 → vehicles insert
 //    Step 3 → service_requests insert
-//    Step 4 → EmailJS confirmation email
-//    Step 5 → Update status → confirmed
-//    Step 6 → Show inline success card
+//    Step 4 → appointments insert
+//    Step 5 → EmailJS confirmation email
+//    Step 6 → Update status → confirmed
+//    Step 7 → Show inline success card
 // ─────────────────────────────────────────────
 if (form) {
   form.addEventListener("submit", async (e) => {
@@ -539,6 +540,51 @@ if (form) {
 
     const requestId = srData.request_id;
 
+    // ── STEP 4: appointments ──────────────────
+    // Build scheduled_start and scheduled_end from requested_date + time window.
+    // Time window format: "08:00-10:00", "10:00-12:00", etc.
+    // If no window, default to 08:00–09:00 as a placeholder.
+    let scheduledStart = null;
+    let scheduledEnd   = null;
+    try {
+      const windowMap = {
+        "morning":   ["08:00", "12:00"],
+        "afternoon": ["12:00", "17:00"],
+        "evening":   ["17:00", "20:00"],
+        "08:00-10:00": ["08:00", "10:00"],
+        "10:00-12:00": ["10:00", "12:00"],
+        "12:00-14:00": ["12:00", "14:00"],
+        "14:00-16:00": ["14:00", "16:00"],
+        "16:00-18:00": ["16:00", "18:00"],
+      };
+      const tw = (timeWindow || "").toLowerCase().trim();
+      const [startTime, endTime] = windowMap[tw] || ["08:00", "09:00"];
+      scheduledStart = `${requestedDate}T${startTime}:00`;
+      scheduledEnd   = `${requestedDate}T${endTime}:00`;
+    } catch (_) {
+      scheduledStart = `${requestedDate}T08:00:00`;
+      scheduledEnd   = `${requestedDate}T09:00:00`;
+    }
+
+    const { error: apptError } = await supabase
+      .from("appointments")
+      .insert({
+        customer_id:            customerId,
+        service_request_id:     requestId,
+        scheduled_start:        scheduledStart,
+        scheduled_end:          scheduledEnd,
+        appointment_status:     "Requested",
+        preferred_time_window:  timeWindow,
+        customer_notes:         notes,
+      });
+
+    if (apptError) {
+      // Non-fatal — service request saved successfully, log the issue
+      console.warn("[JECS] appointments insert failed — code:", apptError?.code, "| message:", apptError?.message);
+    } else {
+      console.info("[JECS] Appointment record created for SRN:", srn);
+    }
+
     // Evaluate Formspree
     const formspreeResult = await Promise.allSettled([formspreePromise]);
     if (formspreeResult[0].status !== "fulfilled" || !formspreeResult[0].value.ok) {
@@ -559,14 +605,14 @@ if (form) {
       } catch (_) { /* non-fatal */ }
     }
 
-    // ── STEP 4: Confirmation email ─────────────
+    // ── STEP 5: Confirmation email ─────────────
     setStatus("Sending your confirmation email…");
     const emailResult = await sendConfirmationEmail({
       name, email, srn, service, vehicle,
       address, requestedDate, timeWindow, notes,
     });
 
-    // ── STEP 5: Update status ──────────────────
+    // ── STEP 6: Update status ──────────────────
     const finalStatus = emailResult.ok ? "confirmed" : "pending_confirmation";
     try {
       await supabase
@@ -575,7 +621,7 @@ if (form) {
         .eq("request_id", requestId);
     } catch (_) { /* non-fatal */ }
 
-    // ── STEP 6: Success card ───────────────────
+    // ── STEP 7: Success card ───────────────────
     const pkg           = PACKAGES[service] || {};
     const serviceLabel  = pkg.label || service || "Service";
     const formattedDate = requestedDate
