@@ -1,5 +1,5 @@
 /* =============================================
-   JECS Quick Wash — weather-calendar.js  v2.0
+   JECS Quick Wash — weather-calendar.js  v2.1
    Weather-aware + Schedule-aware date picker
 
    Three signals layered on every calendar day:
@@ -22,6 +22,10 @@
    • Weekends blocked (closed)
    • Adjacent ZIP clusters counted together for routing
      e.g. tech serving 372xx serves 371xx–373xx
+
+   v2.1 fix: all date comparisons use noon-anchored
+   local date strings to prevent timezone-offset
+   issues that caused all days to appear locked.
    ============================================= */
 
 (function () {
@@ -35,15 +39,14 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg";
 
   // ── Scheduling constants ──────────────────────
-  const DAY_MINUTES     = 540;   // 8 AM–5 PM
-  const TRAVEL_BUFFER   = 8;     // avg minutes between stops within a zone
-  const SOFT_CAP_PCT    = 0.80;  // filling-fast threshold
+  const DAY_MINUTES     = 540;
+  const TRAVEL_BUFFER   = 8;
+  const SOFT_CAP_PCT    = 0.80;
 
-  // Service duration lookup — matches both UUID form values and human labels
   const SERVICE_DURATIONS = {
-    "package-uuid-0001":  20,   // Quick Wash
-    "package-uuid-0002":  35,   // Wash + Vacuum
-    "package-uuid-0003":  540,  // Fleet & Commercial (full-day block)
+    "package-uuid-0001":  20,
+    "package-uuid-0002":  35,
+    "package-uuid-0003":  540,
     "quick wash":         20,
     "wash + vacuum":      35,
     "fleet":              540,
@@ -52,37 +55,52 @@
   };
 
   // ── State ─────────────────────────────────────
-  let forecastData    = {};   // { "YYYY-MM-DD": weatherObj }
-  let scheduleData    = {};   // { "YYYY-MM-DD": { usedMin, jobCount, hasFleet } }
+  let forecastData    = {};
+  let scheduleData    = {};
   let selectedDate    = null;
   let currentMonth    = null;
   let userLat         = null;
   let userLng         = null;
   let userZip         = null;
-  let selectedService = null; // current package_id value from form select
+  let selectedService = null;
 
-  // ── Helpers ───────────────────────────────────
+  // ── Date helpers (all timezone-safe) ──────────
+  // KEY FIX: always anchor to noon local time so
+  // date string comparisons are never shifted by
+  // UTC offset. "2026-06-27" < "2026-06-28" works
+  // correctly regardless of the user's timezone.
+
   const pad = n => String(n).padStart(2, "0");
 
+  // Build YYYY-MM-DD from a Date object using LOCAL date parts
   function toDateKey(d) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  function today() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+  // Today as YYYY-MM-DD in local time
+  function todayKey() {
+    return toDateKey(new Date());
+  }
+
+  // Parse a YYYY-MM-DD key back to a noon-anchored local Date
+  // so comparisons like dateA < dateB work correctly
+  function keyToDate(key) {
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
   }
 
   function isWeekend(key) {
-    const d = new Date(key + "T12:00:00");
-    return d.getDay() === 0 || d.getDay() === 6;
+    return keyToDate(key).getDay() === 0 || keyToDate(key).getDay() === 6;
   }
 
-  function nextBusinessDay() {
-    let d = new Date(today());
+  // Earliest selectable date = next business day
+  function nextBusinessDayKey() {
+    const d = new Date();
     d.setDate(d.getDate() + 1);
-    while (isWeekend(toDateKey(d))) d.setDate(d.getDate() + 1);
+    d.setHours(12, 0, 0, 0);
+    while (d.getDay() === 0 || d.getDay() === 6) {
+      d.setDate(d.getDate() + 1);
+    }
     return toDateKey(d);
   }
 
@@ -97,10 +115,6 @@
     return m ? m[1] : null;
   }
 
-  // ── Adjacent ZIP cluster groups ───────────────
-  // A tech routing through ZIP 37201 can also efficiently
-  // serve 37101 and 37301 on the same run.
-  // We track all three prefix buckets to count zone load.
   function clusterGroup(zip) {
     if (!zip || zip.length < 3) return ["unzoned"];
     const n = parseInt(zip.slice(0, 3), 10);
@@ -112,16 +126,16 @@
   // ── Weather scoring ───────────────────────────
   function calcWashScore({ precipMm, windKph, tempMax, tempMin }) {
     let s = 100;
-    if      (precipMm >= 10)   s -= 65;
-    else if (precipMm >= 3)    s -= 42;
-    else if (precipMm >= 0.5)  s -= 22;
-    if      (windKph  >= 50)   s -= 25;
-    else if (windKph  >= 30)   s -= 12;
-    else if (windKph  >= 20)   s -= 5;
-    if      (tempMin  <= 0)    s -= 25;
-    else if (tempMin  <= 4)    s -= 10;
-    if      (tempMax  >= 38)   s -= 15;
-    else if (tempMax  >= 35)   s -= 8;
+    if      (precipMm >= 10)  s -= 65;
+    else if (precipMm >= 3)   s -= 42;
+    else if (precipMm >= 0.5) s -= 22;
+    if      (windKph  >= 50)  s -= 25;
+    else if (windKph  >= 30)  s -= 12;
+    else if (windKph  >= 20)  s -= 5;
+    if      (tempMin  <= 0)   s -= 25;
+    else if (tempMin  <= 4)   s -= 10;
+    if      (tempMax  >= 38)  s -= 15;
+    else if (tempMax  >= 35)  s -= 8;
     return Math.max(0, Math.min(100, s));
   }
 
@@ -132,7 +146,7 @@
     return               { tier: "weather-bad",  icon: "🌧️", label: "Rain or wind likely" };
   }
 
-  // ── Capacity status for a given date + service ─
+  // ── Capacity status ───────────────────────────
   function capacityStatus(dateKey, pkgValue) {
     const entry   = scheduleData[dateKey] || { usedMin: 0, jobCount: 0, hasFleet: false };
     const dur     = serviceDuration(pkgValue);
@@ -145,7 +159,7 @@
       return { status: "full", slotsLabel: "Zone full — fleet booking", usedPct: 1 };
     }
     if (dur >= DAY_MINUTES && used > 0) {
-      return { status: "full", slotsLabel: "Fleet block unavailable — zone has bookings", usedPct };
+      return { status: "full", slotsLabel: "Fleet block unavailable", usedPct };
     }
     if (remain < jobCost) {
       return { status: "full", slotsLabel: "Fully booked", usedPct: 1 };
@@ -159,19 +173,26 @@
   }
 
   // ── Combined day status ───────────────────────
-  // Returns everything the calendar cell and detail panel need.
   function dayStatus(dateKey, pkgValue) {
-    const minLead = nextBusinessDay();
+    const minLead  = nextBusinessDayKey();
+    const todayStr = todayKey();
 
+    // Past or today — blocked
+    if (dateKey <= todayStr) {
+      return { blocked: true, tier: "blocked", icon: "🚫", label: "Past date" };
+    }
+
+    // Too soon (before next business day) — blocked
     if (dateKey < minLead) {
       return { blocked: true, tier: "blocked", icon: "🚫", label: "Too soon to book" };
     }
+
+    // Weekend — blocked
     if (isWeekend(dateKey)) {
       return { blocked: true, tier: "blocked", icon: "📵", label: "Closed weekends" };
     }
 
     const cap = capacityStatus(dateKey, pkgValue);
-
     if (cap.status === "full") {
       return { blocked: true, tier: "blocked", icon: "🔒", label: cap.slotsLabel, cap };
     }
@@ -179,7 +200,6 @@
     const wx = forecastData[dateKey];
 
     if (!wx) {
-      // No forecast yet — show schedule state only
       if (cap.status === "filling") {
         return { blocked: false, tier: "filling", icon: "⚡", label: cap.slotsLabel, cap };
       }
@@ -188,17 +208,13 @@
 
     const wt = weatherTier(wx.score);
 
-    // Weather bad overrides everything non-blocked — strongly discourage but allow
     if (wt.tier === "weather-bad") {
       return { blocked: false, tier: "weather-bad", icon: "🌧️", label: "Rain likely", cap, wx };
     }
-
-    // Filling warning takes visual priority over fair/good weather
     if (cap.status === "filling") {
       return { blocked: false, tier: "filling", icon: "⚡", label: cap.slotsLabel, cap, wx };
     }
 
-    // Normal: weather drives the colour
     return { blocked: false, tier: wt.tier, icon: wt.icon, label: wt.label, cap, wx };
   }
 
@@ -239,33 +255,18 @@
         ...weatherTier(score),
       };
     });
-    // Store forecast in sessionStorage so supabase-submit.js can
-    // include the weather note for the selected date in the
-    // confirmation email without needing a second API call.
     try { sessionStorage.setItem("jecs_forecast", JSON.stringify(out)); } catch (_) {}
     return out;
   }
 
   // ── Supabase capacity fetch ───────────────────
-  // Joins service_requests → customers to get
-  // customers.zip_code for zone filtering.
-  //
-  // Why the join: service_requests has no zip/cluster
-  // column. ZIP lives on customers.zip_code, written
-  // correctly by supabase-submit.js v2.1.
-  //
-  // PostgREST embedded resource syntax:
-  //   select=...,customers(zip_code)
-  // returns each row with a nested customers object.
   async function fetchSchedule(zip) {
-    const t       = today();
-    const from    = toDateKey(t);
-    const to      = toDateKey(new Date(t.getTime() + FORECAST_DAYS * 86_400_000));
-    const clusters = clusterGroup(zip); // e.g. ["371xx","372xx","373xx"]
+    const from     = todayKey();
+    const toDate   = new Date();
+    toDate.setDate(toDate.getDate() + FORECAST_DAYS);
+    const to       = toDateKey(toDate);
+    const clusters = clusterGroup(zip);
 
-    // URLSearchParams encodes parentheses as %28%29 which breaks
-    // PostgREST's embedded resource syntax customers(zip_code) → 400.
-    // Build the query string manually to keep parentheses literal.
     const qs = [
       `select=requested_date,package_id,status,customers(zip_code)`,
       `requested_date=gte.${from}`,
@@ -288,21 +289,14 @@
 
       const agg = {};
       rows.forEach(row => {
-        const dateKey  = row.requested_date;
+        const dateKey = row.requested_date;
         if (!dateKey) return;
-
-        // Extract zip from the joined customers object
-        const rowZip   = row.customers?.zip_code || null;
-
-        // Zone match: rowZip falls within the adjacent cluster group
+        const rowZip    = row.customers?.zip_code || null;
         const rowPrefix = rowZip ? rowZip.slice(0, 3) : null;
-        const inZone = !rowZip                // no ZIP → include (don't exclude unknowns)
-          || clusters.some(c => c.replace("xx", "") === rowPrefix);
-
+        const inZone    = !rowZip || clusters.some(c => c.replace("xx", "") === rowPrefix);
         if (!inZone) return;
 
         if (!agg[dateKey]) agg[dateKey] = { usedMin: 0, jobCount: 0, hasFleet: false };
-
         const dur = serviceDuration(row.package_id);
         if (dur >= DAY_MINUTES) {
           agg[dateKey].hasFleet = true;
@@ -322,13 +316,15 @@
 
   // ── Calendar HTML builder ─────────────────────
   function buildHTML() {
-    const t       = today();
-    const yr      = currentMonth.getFullYear();
-    const mo      = currentMonth.getMonth();
-    const moLabel = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
-    const first   = new Date(yr, mo, 1).getDay();
-    const days    = new Date(yr, mo + 1, 0).getDate();
-    const canPrev = new Date(yr, mo - 1, 1) >= new Date(t.getFullYear(), t.getMonth(), 1);
+    const todayStr  = todayKey();
+    const yr        = currentMonth.getFullYear();
+    const mo        = currentMonth.getMonth();
+    const moLabel   = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
+    const first     = new Date(yr, mo, 1).getDay();
+    const days      = new Date(yr, mo + 1, 0).getDate();
+    const thisMonth = new Date().getMonth();
+    const thisYear  = new Date().getFullYear();
+    const canPrev   = !(yr === thisYear && mo === thisMonth);
 
     let h = `
       <div class="jecs-cal-header">
@@ -353,50 +349,47 @@
         <div class="jecs-dow">Th</div><div class="jecs-dow">Fr</div>
         <div class="jecs-dow">Sa</div>`;
 
-    // Leading empty cells
     for (let s = 0; s < first; s++) {
       h += `<div class="jecs-cal-day empty"></div>`;
     }
 
     for (let d = 1; d <= days; d++) {
-      const date = new Date(yr, mo, d);
-      const key  = toDateKey(date);
-      const past = date < t;
-      const tod  = key === toDateKey(t);
+      const key  = `${yr}-${pad(mo + 1)}-${pad(d)}`;
+      const past = key <= todayStr;
+      const tod  = key === todayStr;
       const sel  = key === selectedDate;
 
       if (past) {
         h += `<div class="jecs-cal-day past" aria-disabled="true" title="Past date">
-                <span class="jecs-day-num">${d}</span>
+                <span class="jecs-day-num">${tod ? `<span class="tod-ring">${d}</span>` : d}</span>
               </div>`;
         continue;
       }
 
-      const st      = dayStatus(key, selectedService);
-      const cap     = st.cap || {};
-      const barW    = Math.round((cap.usedPct || 0) * 100);
-      const tooltip = buildTooltip(key, st);
-      let cls = `jecs-cal-day t-${st.tier}${st.blocked ? " blocked" : ""}${sel ? " selected" : ""}${tod ? " today-cell" : ""}`;
+      const st   = dayStatus(key, selectedService);
+      const cap  = st.cap || {};
+      const barW = Math.round((cap.usedPct || 0) * 100);
+      const tip  = buildTooltip(key, st);
+      const cls  = `jecs-cal-day t-${st.tier}${st.blocked ? " blocked" : ""}${sel ? " selected" : ""}`;
 
       h += `
         <div class="${cls}"
              data-date="${key}"
              data-blocked="${st.blocked}"
-             title="${tooltip}"
+             title="${tip}"
              role="button"
              tabindex="${st.blocked ? -1 : 0}"
              aria-label="Day ${d}, ${st.label}"
              aria-pressed="${sel}"
              aria-disabled="${st.blocked}">
-          <span class="jecs-day-num">${tod ? `<span class="tod-ring">${d}</span>` : d}</span>
+          <span class="jecs-day-num">${d}</span>
           <span class="jecs-day-icon">${st.icon}</span>
           ${barW > 0 ? `<div class="jecs-bar"><div class="jecs-bar-fill" style="width:${barW}%"></div></div>` : ""}
         </div>`;
     }
 
-    h += `</div>`; // end grid
+    h += `</div>`;
 
-    // ── Selected day detail panel ──
     if (selectedDate) {
       const st  = dayStatus(selectedDate, selectedService);
       const cap = st.cap || {};
@@ -410,17 +403,16 @@
             </span>
           </div>
           <div class="jecs-detail-stats">
-            ${wx ? `<span>&#127783; ${wx.precip}mm rain</span><span>&#128168; ${wx.wind}km/h wind</span><span>&#127777; ${wx.tempMin}&ndash;${wx.tempMax}&deg;C</span>` : ""}
-            <span>&#128203; ${cap.slotsLabel || "Checking slots\u2026"}</span>
+            ${wx ? `<span>🌧 ${wx.precip}mm rain</span><span>💨 ${wx.wind}km/h wind</span><span>🌡 ${wx.tempMin}–${wx.tempMax}°C</span>` : ""}
+            <span>📋 ${cap.slotsLabel || "Checking slots…"}</span>
           </div>
         </div>`;
     }
 
-    // ── Zone availability summary ──
     const openCount = countOpenDays();
     h += `
       <div class="jecs-zone-bar">
-        <span>&#128205; ${userZip ? `Zone ${userZip}` : "Your area"}</span>
+        <span>📍 ${userZip ? `Zone ${userZip}` : "Your area"}</span>
         <span>${openCount} good day${openCount !== 1 ? "s" : ""} in the next ${FORECAST_DAYS} days</span>
       </div>`;
 
@@ -437,13 +429,13 @@
   }
 
   function countOpenDays() {
-    const t = today();
     let n = 0;
     for (let i = 1; i <= FORECAST_DAYS; i++) {
-      const d = new Date(t);
+      const d = new Date();
       d.setDate(d.getDate() + i);
-      const st = dayStatus(toDateKey(d), selectedService);
-      if (!st.blocked && st.tier !== "weather-bad" && st.tier !== "bad") n++;
+      const key = toDateKey(d);
+      const st  = dayStatus(key, selectedService);
+      if (!st.blocked && st.tier !== "weather-bad") n++;
     }
     return n;
   }
@@ -528,7 +520,7 @@
     }
   }
 
-  // Watch for form field changes that affect the calendar
+  // ── Form field watchers ───────────────────────
   function watchFormFields() {
     const pkgEl  = document.querySelector('[name="package_id"]');
     const zipEl  = document.querySelector('[name="zip_code"]');
@@ -536,14 +528,9 @@
     const latEl  = document.getElementById("lat");
     const lngEl  = document.getElementById("lng");
 
-    // Service type change → re-evaluate capacity display
-    pkgEl?.addEventListener("change", () => {
-      selectedService = pkgEl.value;
-      render();
-    });
+    pkgEl?.addEventListener("change", () => { selectedService = pkgEl.value; render(); });
     if (pkgEl?.value) selectedService = pkgEl.value;
 
-    // ZIP code changed manually
     zipEl?.addEventListener("change", () => {
       const z = zipEl.value;
       if (z && z !== userZip && isFinite(userLat) && isFinite(userLng)) {
@@ -552,7 +539,6 @@
       }
     });
 
-    // Google Places autocomplete resolved new lat/lng
     const onPlace = () => setTimeout(() => {
       const lat2 = parseFloat(latEl?.value);
       const lng2 = parseFloat(lngEl?.value);
@@ -578,7 +564,6 @@
     const el = document.createElement("style");
     el.id = "jecs-cal-css";
     el.textContent = `
-      /* ── JECS Weather Calendar v2 ─────────── */
       #jecsWeatherCal {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -588,8 +573,6 @@
         font-family: inherit;
         box-shadow: 0 2px 12px rgba(0,0,0,.07);
       }
-
-      /* Header */
       .jecs-cal-header {
         display: flex; align-items: center;
         justify-content: space-between; margin-bottom: 10px;
@@ -603,11 +586,8 @@
       }
       .jecs-cal-nav:hover:not([disabled]) { background: #f7fafc; }
       .jecs-cal-nav[disabled] { opacity: .3; cursor: default; }
-
-      /* Legend */
       .jecs-cal-legend {
-        display: flex; flex-wrap: wrap; gap: 6px;
-        margin-bottom: 10px;
+        display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
       }
       .jecs-leg {
         font-size: .67rem; font-weight: 600;
@@ -618,20 +598,14 @@
       .l-filling { background: #fffbeb; color: #7b4f00; border: 1px solid #f6ad55; }
       .l-rain    { background: #ebf8ff; color: #2b6cb0; }
       .l-blocked { background: #f7f7f7; color: #718096; }
-
-      /* Grid */
       .jecs-cal-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 3px;
+        display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
       }
       .jecs-dow {
         text-align: center; font-size: .63rem; font-weight: 700;
         color: #a0aec0; padding: 3px 0;
         text-transform: uppercase; letter-spacing: .04em;
       }
-
-      /* Day cells */
       .jecs-cal-day {
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
@@ -654,7 +628,6 @@
         box-shadow: 0 0 0 3px rgba(49,130,206,.28) !important;
         transform: translateY(-1px);
       }
-
       .jecs-day-num  { font-size: .8rem; font-weight: 700; line-height: 1; z-index: 1; }
       .jecs-day-icon { font-size: .82rem; margin-top: 2px; z-index: 1; }
       .tod-ring {
@@ -662,8 +635,6 @@
         background: #2d3748; color: #fff;
         border-radius: 50%; width: 20px; height: 20px;
       }
-
-      /* Tier background colours */
       .t-great       { background: #f0fff4; }
       .t-fair        { background: #fffff0; }
       .t-poor        { background: #fff5f0; }
@@ -671,8 +642,6 @@
       .t-filling     { background: #fffbeb; border-color: #f6ad55 !important; }
       .t-blocked     { background: #f7f7f7; }
       .t-no-data     { background: #f9fafb; }
-
-      /* Capacity micro-bar at cell bottom */
       .jecs-bar {
         position: absolute; bottom: 0; left: 0; right: 0;
         height: 3px; background: rgba(0,0,0,.08);
@@ -680,16 +649,10 @@
       }
       .jecs-bar-fill {
         height: 100%; border-radius: 0 0 6px 6px;
-        /* gradient shifts green → amber → red as bar fills */
-        background: linear-gradient(90deg,
-          #48bb78 0%,
-          #f6ad55 60%,
-          #e53e3e 100%);
+        background: linear-gradient(90deg,#48bb78 0%,#f6ad55 60%,#e53e3e 100%);
         background-size: 300% 100%;
         transition: width .3s ease;
       }
-
-      /* Detail panel */
       .jecs-detail {
         margin-top: 12px; border-radius: 9px;
         padding: 11px 14px; font-size: .8rem;
@@ -715,8 +678,6 @@
       }
       .badge-open    { background: rgba(0,0,0,.10); }
       .badge-blocked { background: rgba(220,38,38,.12); color: #c53030; }
-
-      /* Zone summary bar */
       .jecs-zone-bar {
         display: flex; justify-content: space-between;
         flex-wrap: wrap; gap: 4px;
@@ -724,7 +685,6 @@
         margin-top: 10px; padding-top: 8px;
         border-top: 1px solid #edf2f7;
       }
-
       .jecs-cal-loading {
         text-align: center; color: #718096;
         font-size: .85rem; padding: 28px 0; margin: 0;
@@ -743,12 +703,12 @@
     const dateInput = document.querySelector(`[name="${DATE_INPUT_NAME}"]`);
     if (!dateInput) return;
 
-    dateInput.type = "hidden"; // keep for form submission, hide from view
+    dateInput.type = "hidden";
 
     const wrapper = document.createElement("div");
     wrapper.innerHTML = `
-      <p class="jecs-cal-label">&#128197; Pick your wash date &mdash; weather &amp; availability checked</p>
-      <div id="${CALENDAR_ID}"><p class="jecs-cal-loading">Checking your area&hellip;</p></div>
+      <p class="jecs-cal-label">📅 Pick your wash date — weather &amp; availability checked</p>
+      <div id="${CALENDAR_ID}"><p class="jecs-cal-loading">Checking your area…</p></div>
     `;
     dateInput.insertAdjacentElement("afterend", wrapper);
 
