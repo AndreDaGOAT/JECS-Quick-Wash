@@ -698,6 +698,21 @@
     document.head.appendChild(el);
   }
 
+  // ── Post-submission refresh ───────────────────
+  // supabase-submit.js fires "jecs:submitted" on the
+  // document after a successful insert so the calendar
+  // re-fetches capacity and shows updated slot counts.
+  function listenForSubmission() {
+    document.addEventListener("jecs:submitted", () => {
+      console.info("[JECS Calendar] Refreshing capacity after submission…");
+      // Clear schedule cache so loadAll fetches fresh data
+      scheduleData = {};
+      if (isFinite(userLat) && isFinite(userLng)) {
+        loadAll(userLat, userLng, userZip);
+      }
+    });
+  }
+
   // ── Mount ─────────────────────────────────────
   function mount() {
     const dateInput = document.querySelector(`[name="${DATE_INPUT_NAME}"]`);
@@ -720,6 +735,7 @@
     if (pkgEl?.value) selectedService = pkgEl.value;
 
     watchFormFields();
+    listenForSubmission();
     tryGetLocation();
   }
 
