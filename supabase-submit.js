@@ -631,5 +631,11 @@ if (form) {
       : "To be confirmed";
 
     showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, address });
+
+    // Notify weather-calendar.js to refresh slot counts now that a new
+    // service request has been written to Supabase.
+    document.dispatchEvent(new CustomEvent("jecs:submitted", {
+      detail: { srn, requestedDate, service },
+    }));
   });
 }
