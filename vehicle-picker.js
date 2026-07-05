@@ -26,18 +26,23 @@
   const NHTSA_BASE       = "https://vpic.nhtsa.dot.gov/api/vehicles";
   const FETCH_TIMEOUT_MS = 5000;
 
-  const yearSel      = document.getElementById("vp_year");
-  const makeSel      = document.getElementById("vp_make");
-  const modelSel     = document.getElementById("vp_model");
-  const colorIn      = document.getElementById("vp_color");
-  const plateIn      = document.getElementById("vp_plate");
-  const fallbackRow  = document.getElementById("vp_fallback_row");
-  const fallbackHint = document.getElementById("vp_fallback_hint");
-  const makeTextIn   = document.getElementById("vp_make_text");
-  const modelTextIn  = document.getElementById("vp_model_text");
-  const summaryField = document.getElementById("vehicleTypeSummary");
+  function init() {
+    const yearSel      = document.getElementById("vp_year");
+    const makeSel      = document.getElementById("vp_make");
+    const modelSel     = document.getElementById("vp_model");
+    const colorIn      = document.getElementById("vp_color");
+    const plateIn      = document.getElementById("vp_plate");
+    const fallbackRow  = document.getElementById("vp_fallback_row");
+    const fallbackHint = document.getElementById("vp_fallback_hint");
+    const makeTextIn   = document.getElementById("vp_make_text");
+    const modelTextIn  = document.getElementById("vp_model_text");
+    const summaryField = document.getElementById("vehicleTypeSummary");
 
-  if (!yearSel || !makeSel || !modelSel) return;
+    if (!yearSel || !makeSel || !modelSel) return;
+
+    // Remove disabled so createAutocomplete can work with them
+    makeSel.removeAttribute("disabled");
+    modelSel.removeAttribute("disabled");
 
   let usingFallback = false;
   let makesCache    = null;
@@ -268,5 +273,13 @@
   /* ── Init ── */
   buildYearOptions();
   loadMakes().catch(function(err){ enableFallbackMode(err.message); });
+
+  } // end init()
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 
 })();
