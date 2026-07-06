@@ -361,9 +361,10 @@ function showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, a
 //    Step 1 → customers insert
 //    Step 2 → vehicles insert
 //    Step 3 → service_requests insert
-//    Step 4 → EmailJS confirmation email
-//    Step 5 → Update status → confirmed
-//    Step 6 → Show inline success card
+//    Step 4 → appointments insert
+//    Step 5 → EmailJS confirmation email
+//    Step 6 → Update status → confirmed
+//    Step 7 → Show inline success card
 // ─────────────────────────────────────────────
 if (form) {
   form.addEventListener("submit", async (e) => {
@@ -411,8 +412,14 @@ if (form) {
     const phone      = String(fd.get("phone_number")          || "").trim() || null;
     const address    = String(fd.get("formatted_address")     || "").trim() || null;
     const service    = String(fd.get("package_id")            || "").trim() || null;
-    const vehicle      = String(fd.get("vehicle_type")    || "").trim() || null;
-    const licensePlate = String(fd.get("license_plate") || "").trim() || null;
+    const vehicle    = String(fd.get("vehicle_type")          || "").trim() || null;
+    const vehicleYear  = String(fd.get("vehicle_year")  || "").trim() || null;
+    const vehicleMakeText  = String(fd.get("vehicle_make_text")  || "").trim();
+    const vehicleModelText = String(fd.get("vehicle_model_text") || "").trim();
+    const vehicleMake  = String(fd.get("vehicle_make")  || "").trim() || vehicleMakeText  || null;
+    const vehicleModel = String(fd.get("vehicle_model") || "").trim() || vehicleModelText || null;
+    const vehicleColor = String(fd.get("vehicle_color") || "").trim() || null;
+    const licensePlate = String(fd.get("license_plate") || "").trim().toUpperCase() || null;
     const notes      = String(fd.get("special_notes")         || "").trim() || null;
     const timeWindow = String(fd.get("preferred_time_window") || "").trim() || null;
     const requestedDate = rawDate;
@@ -423,7 +430,7 @@ if (form) {
       localStorage.setItem("jecs_submission_ts", Date.now().toString());
       localStorage.setItem("jecs_last_payload", JSON.stringify({
         srn, name, email, phone, address, service,
-        vehicle, licensePlate, notes, geo, requestedDate, timeWindow,
+        vehicle, notes, geo, requestedDate, timeWindow,
       }));
     } catch (_) { /* quota exceeded — non-fatal */ }
 
@@ -468,14 +475,25 @@ if (form) {
     const customerId = customerData.customer_id;
 
     // ── STEP 2: vehicles ───────────────────────
+    // hasVehicleInfo: true if the client filled in ANY part of the
+    // guided picker (year/make/model/color/plate) or the legacy
+    // vehicle_type fallback, so we don't insert an empty row.
+    const hasVehicleInfo = !!(
+      vehicle || vehicleYear || vehicleMake || vehicleModel || vehicleColor || licensePlate
+    );
+
     let vehicleId = null;
-    if (vehicle) {
+    if (hasVehicleInfo) {
       const { data: vData, error: vError } = await supabase
         .from("vehicles")
         .insert({
-          customer_id:   customerId,
-          vehicle_type:  vehicle,
-          license_plate: licensePlate,
+          customer_id:    customerId,
+          make:           vehicleMake,
+          model:          vehicleModel,
+          year:           vehicleYear ? parseInt(vehicleYear, 10) : null,
+          color:          vehicleColor,
+          license_plate:  licensePlate,
+          vehicle_type:   vehicle, // kept for backward compatibility with existing rows/reports
           // created_at omitted — Supabase column default handles it
         })
         .select("vehicle_id")
@@ -522,7 +540,92 @@ if (form) {
 
     const requestId = srData.request_id;
 
-    // Evaluate Formspree
+    // ── STEP 4: appointments ──────────────────
+    // Map the form's time window values to 24-hr start/end times.
+    // Form values: "8AM-11AM" | "11AM-2PM" | "2PM-5PM"
+    let scheduledStart = null;
+    let scheduledEnd   = null;
+
+    const windowMap = {
+      // Form dropdown values (exact match)
+      "8am-11am":  ["08:00", "11:00"],
+      "11am-2pm":  ["11:00", "14:00"],
+      "2pm-5pm":   ["14:00", "17:00"],
+      // Legacy 24-hr format fallbacks
+      "morning":   ["08:00", "12:00"],
+      "afternoon": ["12:00", "17:00"],
+      "evening":   ["17:00", "20:00"],
+      "08:00-10:00": ["08:00", "10:00"],
+      "10:00-12:00": ["10:00", "12:00"],
+      "12:00-14:00": ["12:00", "14:00"],
+      "14:00-16:00": ["14:00", "16:00"],
+      "16:00-18:00": ["16:00", "18:00"],
+    };
+
+    if (requestedDate) {
+      const tw = (timeWindow || "").toLowerCase().trim();
+      const [startTime, endTime] = windowMap[tw] || ["08:00", "17:00"];
+      scheduledStart = `${requestedDate}T${startTime}:00`;
+      scheduledEnd   = `${requestedDate}T${endTime}:00`;
+    }
+
+    if (!scheduledStart) {
+      console.error("[JECS] appointments insert skipped — no requestedDate selected.");
+    } else {
+      const { error: apptError } = await supabase
+        .from("appointments")
+        .insert({
+          // Core relationships
+          customer_id:           customerId,
+          service_request_id:    requestId,
+
+          // Scheduling
+          scheduled_start:       scheduledStart,
+          scheduled_end:         scheduledEnd,
+          preferred_time_window: timeWindow || null,
+
+          // Status — enters pipeline at first stage
+          appointment_status:    "Requested",
+
+          // Customer notes from form
+          customer_notes:        notes || null,
+
+          // Weather score from calendar session (if available)
+          weather_score: (() => {
+            try {
+              const forecast = JSON.parse(sessionStorage.getItem("jecs_forecast") || "{}");
+              const dayData  = forecast[requestedDate];
+              return dayData?.score ?? null;
+            } catch (_) { return null; }
+          })(),
+        });
+
+      if (apptError) {
+        console.error(
+          "[JECS] appointments insert failed",
+          "| code:", apptError?.code,
+          "| message:", apptError?.message,
+          "| details:", apptError?.details,
+          "| hint:", apptError?.hint
+        );
+        // Non-fatal — service request saved, but log clearly for admin visibility
+      } else {
+        console.info("[JECS] ✅ Appointment record created — SRN:", srn,
+          "| customer:", customerId,
+          "| vehicle:", vehicleId,
+          "| date:", requestedDate,
+          "| window:", timeWindow,
+          "| start:", scheduledStart
+        );
+      }
+    }
+
+    // Notify weather-calendar.js to refresh slot counts
+    document.dispatchEvent(new CustomEvent("jecs:submitted", {
+      detail: { srn, requestedDate, service },
+    }));
+
+    // Evaluate Formspree backup result
     const formspreeResult = await Promise.allSettled([formspreePromise]);
     if (formspreeResult[0].status !== "fulfilled" || !formspreeResult[0].value.ok) {
       console.warn("[JECS] Formspree backup failed — Supabase succeeded, continuing.");
@@ -542,14 +645,14 @@ if (form) {
       } catch (_) { /* non-fatal */ }
     }
 
-    // ── STEP 4: Confirmation email ─────────────
+    // ── STEP 5: Confirmation email ─────────────
     setStatus("Sending your confirmation email…");
     const emailResult = await sendConfirmationEmail({
       name, email, srn, service, vehicle,
       address, requestedDate, timeWindow, notes,
     });
 
-    // ── STEP 5: Update status ──────────────────
+    // ── STEP 6: Update status ──────────────────
     const finalStatus = emailResult.ok ? "confirmed" : "pending_confirmation";
     try {
       await supabase
@@ -558,7 +661,7 @@ if (form) {
         .eq("request_id", requestId);
     } catch (_) { /* non-fatal */ }
 
-    // ── STEP 6: Success card ───────────────────
+    // ── STEP 7: Success card ───────────────────
     const pkg           = PACKAGES[service] || {};
     const serviceLabel  = pkg.label || service || "Service";
     const formattedDate = requestedDate
