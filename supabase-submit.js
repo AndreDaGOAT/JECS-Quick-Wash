@@ -475,34 +475,41 @@ if (form) {
     const customerId = customerData.customer_id;
 
     // ── STEP 2: vehicles ───────────────────────
-    // hasVehicleInfo: true if the client filled in ANY part of the
-    // guided picker (year/make/model/color/plate) or the legacy
-    // vehicle_type fallback, so we don't insert an empty row.
-    const hasVehicleInfo = !!(
-      vehicle || vehicleYear || vehicleMake || vehicleModel || vehicleColor || licensePlate
-    );
+    // vehicles table columns: customer_id, color, license_plate, vehicle_type
+    // vehicle_type stores the full summary from vehicleTypeSummary hidden field
+    // e.g. "2022 Silver Toyota Camry" — this is what the admin/tech will see.
+    const vehicleTypeSummary = String(fd.get("vehicle_type") || "").trim() || null;
+
+    // Build the best possible vehicle_type string from all available sources
+    const vehicleTypeValue = vehicleTypeSummary
+      || [vehicleYear, vehicleColor, vehicleMake, vehicleModel].filter(Boolean).join(" ")
+      || null;
+
+    const hasVehicleInfo = !!(vehicleTypeValue || vehicleColor || licensePlate);
 
     let vehicleId = null;
     if (hasVehicleInfo) {
       const { data: vData, error: vError } = await supabase
         .from("vehicles")
         .insert({
-          customer_id:    customerId,
-          make:           vehicleMake,
-          model:          vehicleModel,
-          year:           vehicleYear ? parseInt(vehicleYear, 10) : null,
-          color:          vehicleColor,
-          license_plate:  licensePlate,
-          vehicle_type:   vehicle, // kept for backward compatibility with existing rows/reports
-          // created_at omitted — Supabase column default handles it
+          customer_id:   customerId,
+          color:         vehicleColor   || null,
+          license_plate: licensePlate   || null,
+          vehicle_type:  vehicleTypeValue || null,
         })
         .select("vehicle_id")
         .single();
+
       if (vError || !vData) {
-        console.warn("[JECS] vehicles insert failed — code:", vError?.code, "| message:", vError?.message);
-        // Non-fatal — continue without vehicle_id
+        console.warn("[JECS] vehicles insert failed — code:", vError?.code,
+          "| message:", vError?.message,
+          "| hint:", vError?.hint);
       } else {
         vehicleId = vData.vehicle_id;
+        console.info("[JECS] ✅ Vehicle created:", vehicleId,
+          "| type:", vehicleTypeValue,
+          "| color:", vehicleColor,
+          "| plate:", licensePlate);
       }
     }
 
