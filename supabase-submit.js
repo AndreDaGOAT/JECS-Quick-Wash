@@ -35,20 +35,56 @@ const JECS_PHONE = "(615) 348-7683";
 const JECS_EMAIL = "Contact@jubileeexecutivecarservice.com";
 
 // ── Package metadata ───────────────────────────
-const PACKAGES = {
-  "package-uuid-0001": {
-    label: "Quick Wash",
-    desc:  "Exterior rinse, hand soap wash, dry, and tire finish.",
-  },
-  "package-uuid-0002": {
-    label: "Wash + Vacuum",
-    desc:  "Everything in Quick Wash plus full interior vacuum and wipe-down.",
-  },
-  "package-uuid-0003": {
-    label: "Fleet & Commercial",
-    desc:  "Volume-priced on-site fleet service. Our team will coordinate a full-day route with your fleet manager.",
-  },
+// Populated dynamically from Supabase service_packages table.
+// Falls back to these hardcoded values if Supabase is unreachable.
+const PACKAGES_FALLBACK = {
+  "package-uuid-0001": { label: "Quick Wash",        desc: "Exterior rinse, hand soap wash, dry, and tire finish." },
+  "package-uuid-0002": { label: "Wash + Vacuum",     desc: "Everything in Quick Wash plus full interior vacuum and wipe-down." },
+  "package-uuid-0003": { label: "Fleet & Commercial",desc: "Volume-priced on-site fleet service." },
 };
+let PACKAGES = { ...PACKAGES_FALLBACK };
+
+// ── Load packages from Supabase and populate select ───────────────────────────
+async function loadPackages() {
+  const pkgSelect = document.querySelector('[name="package_id"]');
+  if (!pkgSelect) return;
+
+  try {
+    const { data, error } = await supabase
+      .from("service_packages")
+      .select("package_id, package_name, description, base_price, active")
+      .eq("active", true)
+      .order("package_name", { ascending: true });
+
+    if (error || !data || data.length === 0) throw new Error("No packages returned");
+
+    // Rebuild PACKAGES lookup with real IDs
+    PACKAGES = {};
+    data.forEach(pkg => {
+      PACKAGES[pkg.package_id] = {
+        label: pkg.package_name,
+        desc:  pkg.description || "",
+        price: pkg.base_price,
+      };
+    });
+
+    // Rebuild the <select> options dynamically
+    pkgSelect.innerHTML = '<option value="">-- Select Service Package --</option>';
+    data.forEach(pkg => {
+      const opt   = document.createElement("option");
+      opt.value   = pkg.package_id;
+      const price = pkg.base_price != null ? ` — $${Number(pkg.base_price).toFixed(2)}` : "";
+      opt.textContent = `${pkg.package_name}${price}`;
+      pkgSelect.appendChild(opt);
+    });
+
+    console.info(`[JECS] Loaded ${data.length} packages from Supabase.`);
+  } catch (err) {
+    // Non-fatal — fall back to hardcoded options already in HTML
+    console.warn("[JECS] Package load failed, using hardcoded fallback:", err.message);
+    PACKAGES = { ...PACKAGES_FALLBACK };
+  }
+}
 
 // ── Supabase Client ────────────────────────────
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -366,6 +402,12 @@ function showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, a
 //    Step 6 → Update status → confirmed
 //    Step 7 → Show inline success card
 // ─────────────────────────────────────────────
+// ── Init — load packages dynamically then wire form ──────────────────────────
+// loadPackages() runs first so the select is populated before the user sees it.
+// The form listener is attached regardless — if packages fail to load,
+// the hardcoded HTML options remain and PACKAGES falls back gracefully.
+loadPackages();
+
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
