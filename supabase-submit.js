@@ -132,7 +132,7 @@ async function verifyTurnstile(token) {
   if (!token) {
     console.warn("[JECS CAPTCHA] No token present — widget may not have completed.");
   } else {
-    console.info("[JECS CAPTCHA] Token received (server verification bypassed — build phase).");
+    const TURNSTILE_WORKER_URL = "https://jecs-turnstile-verify.aarmstrong1234.workers.dev";     
   }
   // Bypass: treat all submissions as passing until edge function is live
   return { ok: true, reason: "bypassed_build_phase" };
