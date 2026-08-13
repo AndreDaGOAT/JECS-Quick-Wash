@@ -122,20 +122,43 @@ function showSrnBanner(srn) {
 // 2. CAPTCHA — BYPASSED (edge function not yet deployed)
 //    The Turnstile widget still loads and challenges
 //    the user visually. Server-side verification is
-//    skipped until verify-turnstile is deployed to
-//    Supabase Edge Functions.
-//    To re-enable: uncomment the supabase.functions
-//    .invoke block and remove the bypass return.
+//    Verifies via Cloudflare Worker: jecs-turnstile-verify
+//    Worker URL set below — update after deploying the Worker.
 // ─────────────────────────────────────────────
+
+// !! UPDATE THIS after deploying the Worker !!
+// Copy the Worker URL from Cloudflare Workers dashboard
+const TURNSTILE_WORKER_URL = "https://jecs-turnstile-verify.YOUR-SUBDOMAIN.workers.dev";
+
 async function verifyTurnstile(token) {
-  // Log whether a token was present for audit purposes
   if (!token) {
-    console.warn("[JECS CAPTCHA] No token present — widget may not have completed.");
-  } else {
-    const TURNSTILE_WORKER_URL = "https://jecs-turnstile-verify.aarmstrong1234.workers.dev";     
+    console.warn("[JECS CAPTCHA] No token — widget may not have rendered.");
+    return { ok: false, reason: "missing_token" };
   }
-  // Bypass: treat all submissions as passing until edge function is live
-  return { ok: true, reason: "bypassed_build_phase" };
+
+  try {
+    const res = await fetch(TURNSTILE_WORKER_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ token }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      console.info("[JECS CAPTCHA] Verified ✓");
+      return { ok: true, reason: "verified" };
+    }
+
+    console.warn("[JECS CAPTCHA] Failed:", data.error, data.codes);
+    return { ok: false, reason: data.error || "failed", codes: data.codes };
+
+  } catch (err) {
+    // If Worker is unreachable, fail open with a warning
+    // (prevents legitimate customers being blocked by network issues)
+    console.warn("[JECS CAPTCHA] Worker unreachable — allowing submission:", err.message);
+    return { ok: true, reason: "worker_unreachable" };
+  }
 }
 
 // ─────────────────────────────────────────────
