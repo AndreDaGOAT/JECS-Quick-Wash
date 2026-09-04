@@ -472,10 +472,84 @@
     });
   }
 
+  // ── Territory availability check ──────────────
+  // Queries wash_pro_territories for any active Wash Pro
+  // covering the customer's ZIP. Returns true if service
+  // is available, false if not.
+  async function checkTerritory(zip) {
+    if (!zip) return true; // no ZIP yet — don't block
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/wash_pro_territories?zip_code=eq.${encodeURIComponent(zip)}&active=eq.true&select=territory_id&limit=1`,
+        {
+          headers: {
+            "apikey":        SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
+      if (!res.ok) return true; // fail open — don't block on API error
+      const rows = await res.json();
+      return Array.isArray(rows) && rows.length > 0;
+    } catch (_) {
+      return true; // fail open on network error
+    }
+  }
+
+  // Show the "not available" message and disable the submit button
+  function showUnavailable(zip) {
+    const cal     = document.getElementById(CALENDAR_ID);
+    const submit  = document.getElementById("submitBtn");
+    const dateIn  = document.querySelector(`[name="${DATE_INPUT_NAME}"]`);
+
+    if (cal) {
+      cal.innerHTML = `
+        <div class="jecs-unavailable">
+          <span class="jecs-unavailable-icon">📍</span>
+          <p class="jecs-unavailable-title">Service not available in your area</p>
+          <p class="jecs-unavailable-msg">
+            We don't currently have a Wash Pro covering
+            <strong>${zip ? `ZIP code ${zip}` : "your area"}</strong>.
+            Please check back shortly as we're expanding our coverage!
+          </p>
+        </div>`;
+    }
+
+    // Disable submit so the form can't be submitted
+    if (submit) {
+      submit.disabled = true;
+      submit.title    = "Service not available in your area";
+    }
+
+    // Clear any previously selected date
+    if (dateIn) dateIn.value = "";
+    selectedDate = null;
+  }
+
+  // Re-enable the submit button when territory is valid
+  function enableSubmit() {
+    const submit = document.getElementById("submitBtn");
+    if (submit) {
+      submit.disabled = false;
+      submit.title    = "";
+    }
+  }
+
   // ── Data load ─────────────────────────────────
   async function loadAll(lat, lng, zip) {
     userZip = zip || userZip || null;
     const cal = document.getElementById(CALENDAR_ID);
+    if (cal) cal.innerHTML = `<p class="jecs-cal-loading">Checking availability&hellip;</p>`;
+
+    // ── Step 1: Territory check ────────────────
+    const hasTerritory = await checkTerritory(zip);
+    if (!hasTerritory) {
+      showUnavailable(zip);
+      return; // stop — don't load weather or capacity
+    }
+
+    // ── Step 2: Territory confirmed — load calendar
+    enableSubmit();
     if (cal) cal.innerHTML = `<p class="jecs-cal-loading">Checking weather &amp; availability&hellip;</p>`;
 
     const [wxRes, schRes] = await Promise.allSettled([
@@ -693,6 +767,36 @@
         font-size: .82rem; font-weight: 600;
         color: #4a5568; margin-bottom: 4px;
         display: flex; align-items: center; gap: 6px;
+      }
+
+      /* ── Service unavailable panel ─── */
+      .jecs-unavailable {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 28px 16px;
+        gap: 8px;
+      }
+      .jecs-unavailable-icon {
+        font-size: 2rem;
+        line-height: 1;
+      }
+      .jecs-unavailable-title {
+        font-weight: 700;
+        font-size: .95rem;
+        color: #2d3748;
+        margin: 0;
+      }
+      .jecs-unavailable-msg {
+        font-size: .82rem;
+        color: #718096;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 28ch;
+      }
+      .jecs-unavailable-msg strong {
+        color: #4a5568;
       }
     `;
     document.head.appendChild(el);
