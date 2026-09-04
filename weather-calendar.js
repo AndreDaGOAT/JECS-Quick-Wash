@@ -769,6 +769,24 @@
         display: flex; align-items: center; gap: 6px;
       }
 
+      /* ── Address prompt (shown before address entered) ─── */
+      .jecs-addr-prompt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 24px 16px;
+        gap: 8px;
+      }
+      .jecs-addr-icon { font-size: 1.8rem; line-height: 1; }
+      .jecs-addr-msg {
+        font-size: .84rem;
+        color: #718096;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 30ch;
+      }
+
       /* ── Service unavailable panel ─── */
       .jecs-unavailable {
         display: flex;
@@ -827,7 +845,12 @@
     const wrapper = document.createElement("div");
     wrapper.innerHTML = `
       <p class="jecs-cal-label">📅 Pick your wash date — weather &amp; availability checked</p>
-      <div id="${CALENDAR_ID}"><p class="jecs-cal-loading">Checking your area…</p></div>
+      <div id="${CALENDAR_ID}">
+        <div class="jecs-addr-prompt">
+          <span class="jecs-addr-icon">📍</span>
+          <p class="jecs-addr-msg">Enter your address above to check availability and weather in your area.</p>
+        </div>
+      </div>
     `;
     dateInput.insertAdjacentElement("afterend", wrapper);
 
@@ -838,9 +861,13 @@
     const pkgEl = document.querySelector('[name="package_id"]');
     if (pkgEl?.value) selectedService = pkgEl.value;
 
+    // Watch for address resolution — calendar only loads after address confirmed
     watchFormFields();
     listenForSubmission();
-    tryGetLocation();
+
+    // Do NOT call tryGetLocation() on mount — wait for customer to enter address.
+    // The watchFormFields() onPlace handler fires when Google Places resolves
+    // lat/lng from the address field, which triggers loadAll() at that point.
   }
 
   if (document.readyState === "loading") {
