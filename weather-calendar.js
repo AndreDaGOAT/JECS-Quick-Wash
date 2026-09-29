@@ -267,25 +267,26 @@
     const to       = toDateKey(toDate);
     const clusters = clusterGroup(zip);
 
-    const qs = [
-      `select=requested_date,package_id,status,customers(zip_code)`,
-      `requested_date=gte.${from}`,
-      `requested_date=lte.${to}`,
-      `status=neq.cancelled`,
-    ].join("&");
-
     try {
+      // get_schedule_load returns date, package and 3-digit zip prefix only (no customer PII).
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/service_requests?${qs}`,
+        `${SUPABASE_URL}/rest/v1/rpc/get_schedule_load`,
         {
+          method: "POST",
           headers: {
             "apikey":        SUPABASE_ANON_KEY,
             "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type":  "application/json",
           },
+          body: JSON.stringify({ p_from: from, p_to: to }),
         }
       );
       if (!r.ok) throw new Error(`Supabase ${r.status}`);
-      const rows = await r.json();
+      const rows = (await r.json()).map(row => ({
+        requested_date: row.requested_date,
+        package_id:     row.package_id,
+        customers:      { zip_code: row.zip_prefix },
+      }));
 
       const agg = {};
       rows.forEach(row => {
