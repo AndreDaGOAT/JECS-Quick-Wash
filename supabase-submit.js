@@ -17,9 +17,119 @@
    ============================================= */
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-// ── T³ Payment Worker URL ──────────────────────
-// Update this after deploying jecs-t3-payment Cloudflare Worker
+// ── T³ Payment Worker URL ─────────────────────
 const T3_PAYMENT_WORKER_URL = "https://jecs-t3-payment.aarmstrong1234.workers.dev";
+
+// ── Stripe Publishable Key ────────────────────
+// Use pk_test_... for sandbox, pk_live_... for production
+// This key is safe to expose in client-side code
+const STRIPE_PUBLISHABLE_KEY = "pk_test_51PLACEHOLDER_REPLACE_WITH_REAL_TEST_KEY";
+
+// ── Show Stripe payment modal ─────────────────
+// Called after booking is saved and Worker returns client_secret
+async function showPaymentModal({
+  clientSecret, serviceLabel, formattedDate,
+  name, srn, timeWindow, address,
+}) {
+  const modal   = document.getElementById("t3-payment-modal");
+  const titleEl = document.getElementById("t3-modal-title");
+  const svcEl   = document.getElementById("t3-modal-service");
+  const dateEl  = document.getElementById("t3-modal-date");
+  const errEl   = document.getElementById("t3-card-error");
+  const payBtn  = document.getElementById("t3-pay-btn");
+  const payText = document.getElementById("t3-pay-btn-text");
+  const payLoad = document.getElementById("t3-pay-btn-loading");
+
+  if (!modal) return false;
+
+  // Populate modal details
+  titleEl.textContent = `Secure Your Booking — ${srn}`;
+  svcEl.textContent   = serviceLabel;
+  dateEl.textContent  = `${formattedDate} · ${(timeWindow || "").replace("-","–")}`;
+
+  // Mount Stripe Elements
+  const stripe   = window.Stripe(STRIPE_PUBLISHABLE_KEY);
+  const elements = stripe.elements();
+  const card     = elements.create("card", {
+    style: {
+      base: {
+        fontSize:        "16px",
+        fontFamily:      "Inter, Segoe UI, system-ui, sans-serif",
+        color:           "#111827",
+        "::placeholder": { color: "#9CA3AF" },
+      },
+      invalid: { color: "#DC2626" },
+    },
+  });
+
+  card.mount("#t3-stripe-element");
+  card.on("change", e => {
+    if (e.error) {
+      errEl.textContent    = e.error.message;
+      errEl.style.display  = "block";
+    } else {
+      errEl.style.display  = "none";
+    }
+  });
+
+  // Show modal
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  // Return a promise that resolves when payment completes or fails
+  return new Promise((resolve) => {
+    payBtn.onclick = async () => {
+      payText.style.display = "none";
+      payLoad.style.display = "inline";
+      payBtn.disabled       = true;
+      errEl.style.display   = "none";
+
+      const isSetupIntent = clientSecret.startsWith("seti_");
+
+      try {
+        let result;
+        if (isSetupIntent) {
+          // Save card for later charge (appointment > 7 days out)
+          result = await stripe.confirmCardSetup(clientSecret, {
+            payment_method: {
+              card,
+              billing_details: { name },
+            },
+          });
+        } else {
+          // Authorize card now (appointment ≤ 7 days out)
+          result = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card,
+              billing_details: { name },
+            },
+          });
+        }
+
+        if (result.error) {
+          errEl.textContent    = result.error.message;
+          errEl.style.display  = "block";
+          payText.style.display = "inline";
+          payLoad.style.display = "none";
+          payBtn.disabled       = false;
+          resolve(false);
+        } else {
+          // Success — close modal
+          modal.style.display  = "none";
+          document.body.style.overflow = "";
+          resolve(true);
+        }
+      } catch (err) {
+        errEl.textContent    = "Payment failed — please try again.";
+        errEl.style.display  = "block";
+        payText.style.display = "inline";
+        payLoad.style.display = "none";
+        payBtn.disabled       = false;
+        resolve(false);
+      }
+    };
+  });
+}
 
 // ── Config ────────────────────────────────────
 const SUPABASE_URL      = "https://mylqkbpclcrqorjctjxn.supabase.co";
@@ -778,11 +888,41 @@ if (form) {
         if (payRes.ok && payData.client_secret) {
           paymentClientSecret = payData.client_secret;
           paymentIntentId     = payData.payment_intent_id || payData.setup_intent_id;
+
           console.info("[JECS T³] Payment intent created:", paymentIntentId,
             "| days out:", daysOut,
             "| amount:", amountCents,
             "| type:", daysOut > 7 ? "setup_intent" : "payment_intent"
           );
+
+          // Get formatted date for modal display
+          const pkg2         = PACKAGES[service] || {};
+          const svcLabel2    = pkg2.label || service || "Service";
+          const fmtDate2     = requestedDate
+            ? new Date(requestedDate + "T12:00:00").toLocaleDateString("en-US", {
+                weekday: "long", year: "numeric", month: "long", day: "numeric",
+              })
+            : "To be confirmed";
+
+          // Show the Stripe payment modal — wait for customer to enter card
+          setStatus("Please complete your secure payment…");
+          const paymentSuccess = await showPaymentModal({
+            clientSecret:  paymentClientSecret,
+            serviceLabel:  svcLabel2,
+            formattedDate: fmtDate2,
+            name,
+            srn,
+            timeWindow,
+            address,
+          });
+
+          if (!paymentSuccess) {
+            // Customer cancelled or card declined — booking saved but payment pending
+            console.warn("[JECS T³] Payment not completed by customer.");
+          } else {
+            console.info("[JECS T³] Payment confirmed by customer.");
+          }
+
         } else {
           // Non-fatal — booking is saved, payment will be handled manually
           console.warn("[JECS T³] Payment intent failed:", payData.error);
