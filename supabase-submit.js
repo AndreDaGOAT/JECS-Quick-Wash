@@ -869,6 +869,13 @@ if (form) {
           ? `${T3_PAYMENT_WORKER_URL}/create-setup-intent`
           : `${T3_PAYMENT_WORKER_URL}/create-payment-intent`;
 
+        console.info("[JECS T³] Calling Worker:",
+          "| endpoint:", endpoint,
+          "| days out:", daysOut,
+          "| amount cents:", amountCents,
+          "| appointment_id:", appointmentId
+        );
+
         const payRes = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -924,8 +931,12 @@ if (form) {
           }
 
         } else {
-          // Non-fatal — booking is saved, payment will be handled manually
-          console.warn("[JECS T³] Payment intent failed:", payData.error);
+          // Surface the real error clearly
+          console.error("[JECS T³] Worker returned error:",
+            "| status:", payRes.status,
+            "| error:", payData.error,
+            "| full response:", JSON.stringify(payData)
+          );
         }
       }
     } catch (payErr) {
