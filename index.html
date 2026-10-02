@@ -204,12 +204,48 @@
       </div>
     </footer>
 
+    <!-- ── T³ Payment Modal ──────────────────────────────────────────────── -->
+    <div id="t3-payment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:14px;padding:2rem;width:100%;max-width:440px;margin:1rem;box-shadow:0 24px 60px rgba(0,0,0,0.4);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <div>
+            <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#6B7280;margin-bottom:2px;">JECS T³ Secure Payment</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#111827;" id="t3-modal-title">Secure Your Booking</div>
+          </div>
+          <div style="font-size:1.5rem;">💳</div>
+        </div>
+
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:0.85rem 1rem;margin-bottom:1.25rem;font-size:0.85rem;color:#374151;line-height:1.6;">
+          <div id="t3-modal-service" style="font-weight:700;color:#111827;margin-bottom:2px;"></div>
+          <div id="t3-modal-date" style="color:#6B7280;"></div>
+          <div style="margin-top:6px;font-size:0.75rem;color:#9CA3AF;">
+            💳 Your card will be authorized now and charged only after service is completed.
+          </div>
+        </div>
+
+        <!-- Stripe Elements mounts here -->
+        <div id="t3-stripe-element" style="border:1px solid #D1D5DB;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;min-height:44px;background:#fff;"></div>
+
+        <div id="t3-card-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:0.6rem 0.85rem;font-size:0.8rem;color:#DC2626;margin-bottom:1rem;"></div>
+
+        <button id="t3-pay-btn" style="width:100%;background:linear-gradient(135deg,#1D4ED8,#1E40AF);color:#fff;border:none;border-radius:8px;padding:0.85rem;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span id="t3-pay-btn-text">🔒 Secure Booking</span>
+          <span id="t3-pay-btn-loading" style="display:none;">Processing…</span>
+        </button>
+
+        <div style="margin-top:0.75rem;text-align:center;font-size:0.7rem;color:#9CA3AF;">
+          Secured by Stripe · JECS T³ Engine · Card not charged until service completes
+        </div>
+      </div>
+    </div>
+
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZAA619g3JlruK77Lfm8vlopcR76vRGg&libraries=places&callback=initGooglePlaces" async defer></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <script src="script.js"></script>
     <script src="vehicle-picker.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <script type="module" src="supabase-submit.js?v=2026-09-29"></script>
-<script src="weather-calendar.js?v=2026-09-29"></script>
+    <script type="module" src="supabase-submit.js"></script>
+    <script src="weather-calendar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   </body>
 </html>
