@@ -856,12 +856,24 @@ if (form) {
           (new Date(scheduledStart) - new Date()) / (1000 * 60 * 60 * 24)
         );
 
-        // Get package price from loaded packages
-        const pkgData    = PACKAGES[service] || {};
-        const priceVal   = pkgData.price;
-        const amountCents = priceVal
-          ? Math.round(parseFloat(priceVal) * 100)
-          : 2500; // $25.00 fallback if price not loaded
+        // Get package price — query Supabase directly using the UUID
+        // PACKAGES may be keyed by slug, not UUID, so query directly
+        let amountCents = 2500; // $25.00 fallback
+        let pkgLabel    = "Quick Wash";
+        try {
+          const { data: pkgRow } = await supabase
+            .from("service_packages")
+            .select("package_name, price")
+            .eq("package_id", service)
+            .maybeSingle();
+          if (pkgRow?.price) {
+            amountCents = Math.round(parseFloat(pkgRow.price) * 100);
+            pkgLabel    = pkgRow.package_name || pkgLabel;
+          }
+          console.info("[JECS T³] Package resolved:", pkgLabel, "| price cents:", amountCents);
+        } catch (_) {
+          console.warn("[JECS T³] Package price lookup failed — using fallback $25.00");
+        }
 
         setStatus("Securing your booking payment…");
 
@@ -903,8 +915,7 @@ if (form) {
           );
 
           // Get formatted date for modal display
-          const pkg2         = PACKAGES[service] || {};
-          const svcLabel2    = pkg2.label || service || "Service";
+          const svcLabel2    = pkgLabel || "Quick Wash";
           const fmtDate2     = requestedDate
             ? new Date(requestedDate + "T12:00:00").toLocaleDateString("en-US", {
                 weekday: "long", year: "numeric", month: "long", day: "numeric",
