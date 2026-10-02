@@ -23,7 +23,7 @@ const T3_PAYMENT_WORKER_URL = "https://jecs-t3-payment.aarmstrong1234.workers.de
 // ── Stripe Publishable Key ────────────────────
 // Use pk_test_... for sandbox, pk_live_... for production
 // This key is safe to expose in client-side code
-const STRIPE_PUBLISHABLE_KEY = "psk_test_51ULv2vDdUitKKphkU07EffmixxFr726qSAsbEyx2S7VH8wqXCkw8yihKmnfYCDZAEfVMosngNpQJvbdRCAnjXqwS00I2gWYQTK";
+const STRIPE_PUBLISHABLE_KEY = "pk_test_51ULv2vDdUitKKphkZHRSuk8ygRL8G3Kn2MWHB1Et8iN7rH8JMHmk5G8mpfNxsdm8bkRfLpA1jKaOMtuIZCiUHejD00VTPwfeZ4";
 
 // ── Show Stripe payment modal ─────────────────
 // Called after booking is saved and Worker returns client_secret
