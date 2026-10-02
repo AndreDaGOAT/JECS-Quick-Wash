@@ -17,6 +17,10 @@
    ============================================= */
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
+// ── T³ Payment Worker URL ──────────────────────
+// Update this after deploying jecs-t3-payment Cloudflare Worker
+const T3_PAYMENT_WORKER_URL = "https://jecs-t3-payment.aarmstrong1234.workers.dev";
+
 // ── Config ────────────────────────────────────
 const SUPABASE_URL      = "https://mylqkbpclcrqorjctjxn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHFrYnBjbGNycW9yamN0anhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjcxNzgsImV4cCI6MjA5NTMwMzE3OH0.yeZZHm0BEvrJShe8Wek5rfKAwunJQ8byKF1THbtwYYg";
@@ -350,7 +354,7 @@ function setLoading(loading) {
   if (loadingEl) loadingEl.style.display = loading ? "inline" : "none";
 }
 
-function showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, address }) {
+function showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, address, paymentSecured }) {
   if (!form) return;
   const timeLabel = timeWindow ? timeWindow.replace("-", "–") : "Flexible";
   const card = document.createElement("div");
@@ -364,6 +368,9 @@ function showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, a
       <li><span>Date</span><strong>${formattedDate}</strong></li>
       <li><span>Time window</span><strong>${timeLabel}</strong></li>
       <li><span>Location</span><strong>${address || "On file"}</strong></li>
+      <li><span>Payment</span><strong>${paymentSecured
+        ? "💳 Card secured — charged after service"
+        : "📋 Invoice to follow"}</strong></li>
     </ul>
     <p class="jecs-success-note">
       A confirmation has been sent to your email.<br>
@@ -508,17 +515,113 @@ if (form) {
       headers: { Accept: "application/json" },
     });
 
-    // ── STEPS 1–4: one atomic booking via RPC ──
-    // create_booking (Supabase, SECURITY DEFINER) inserts customer, vehicle,
-    // service request and appointment in a single transaction. The browser no
-    // longer needs write access to any table.
+    // ── STEP 1: customers ──────────────────────
+    const { data: customerData, error: customerError } = await supabase
+      .from("customers")
+      .insert({
+        full_name:         name,
+        email,
+        phone_number:      phone,
+        formatted_address: address,
+        google_place_id:   geo.place_id,
+        zip_code:          geo.zip_code,
+        latitude:          geo.latitude,
+        longitude:         geo.longitude,
+        // created_at omitted — Supabase column default (now()) handles it in UTC
+      })
+      .select("customer_id")
+      .single();
+
+    if (customerError || !customerData) {
+      console.error("[JECS] customers insert failed — code:", customerError?.code, "| message:", customerError?.message, "| details:", customerError?.details);
+      setStatus(
+        customerError?.code === "42501"
+          ? "Database permissions error. Please contact support or call (615) 348-7683."
+          : "Submission failed at customer step. Please try again or call (615) 348-7683.",
+        "error"
+      );
+      setLoading(false);
+      return;
+    }
+
+    const customerId = customerData.customer_id;
+
+    // ── STEP 2: vehicles ───────────────────────
+    // vehicles table columns: customer_id, color, license_plate, vehicle_type
+    // vehicle_type stores the full summary from vehicleTypeSummary hidden field
+    // e.g. "2022 Silver Toyota Camry" — this is what the admin/tech will see.
     const vehicleTypeSummary = String(fd.get("vehicle_type") || "").trim() || null;
+
+    // Build the best possible vehicle_type string from all available sources
     const vehicleTypeValue = vehicleTypeSummary
       || [vehicleYear, vehicleColor, vehicleMake, vehicleModel].filter(Boolean).join(" ")
       || null;
 
-    const packageId = await resolvePackageId(service);
+    const hasVehicleInfo = !!(vehicleTypeValue || vehicleColor || licensePlate);
 
+    let vehicleId = null;
+    if (hasVehicleInfo) {
+      const { data: vData, error: vError } = await supabase
+        .from("vehicles")
+        .insert({
+          customer_id:   customerId,
+          color:         vehicleColor   || null,
+          license_plate: licensePlate   || null,
+          vehicle_type:  vehicleTypeValue || null,
+        })
+        .select("vehicle_id")
+        .single();
+
+      if (vError || !vData) {
+        console.warn("[JECS] vehicles insert failed — code:", vError?.code,
+          "| message:", vError?.message,
+          "| hint:", vError?.hint);
+      } else {
+        vehicleId = vData.vehicle_id;
+        console.info("[JECS] ✅ Vehicle created:", vehicleId,
+          "| type:", vehicleTypeValue,
+          "| color:", vehicleColor,
+          "| plate:", licensePlate);
+      }
+    }
+
+    // ── STEP 3: service_requests ───────────────
+    const packageId = await resolvePackageId(service);
+    console.info("[JECS] Resolved package_id:", packageId, "from service value:", service);
+
+    const { data: srData, error: srError } = await supabase
+      .from("service_requests")
+      .insert({
+        service_request_number: srn,
+        customer_id:            customerId,
+        vehicle_id:             vehicleId,
+        package_id:             packageId,
+        special_notes:          notes,
+        status:                 "pending_confirmation",
+        requested_date:         requestedDate,
+        client_timezone:        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        // created_at omitted — Supabase column default handles it in UTC
+      })
+      .select("request_id")
+      .single();
+
+    if (srError || !srData) {
+      console.error("[JECS] service_requests insert failed — code:", srError?.code, "| message:", srError?.message, "| details:", srError?.details);
+      setStatus(
+        srError?.code === "42501"
+          ? "Database permissions error. Please contact support or call (615) 348-7683."
+          : "Submission failed at request step. Please try again or call (615) 348-7683.",
+        "error"
+      );
+      setLoading(false);
+      return;
+    }
+
+    const requestId = srData.request_id;
+
+    // ── STEP 4: appointments ──────────────────
+    // Map the form's time window values to 24-hr start/end times.
+    // Form values: "8AM-11AM" | "11AM-2PM" | "2PM-5PM"
     let scheduledStart = null;
     let scheduledEnd   = null;
 
@@ -546,62 +649,55 @@ if (form) {
     }
 
     if (!scheduledStart) {
-      console.error("[JECS] No requestedDate selected — booking saved without an appointment.");
-    }
+      console.error("[JECS] appointments insert skipped — no requestedDate selected.");
+    } else {
+      const { error: apptError } = await supabase
+        .from("appointments")
+        .insert({
+          // Core relationships
+          customer_id:           customerId,
+          service_request_id:    requestId,
 
-    const weatherScore = (() => {
-      try {
-        const forecast = JSON.parse(sessionStorage.getItem("jecs_forecast") || "{}");
-        return forecast[requestedDate]?.score ?? null;
-      } catch (_) { return null; }
-    })();
-
-    const { data: booking, error: bookingError } = await supabase.rpc("create_booking", {
-      p: {
-        customer: {
-          full_name:         name,
-          email,
-          phone_number:      phone,
-          formatted_address: address,
-          google_place_id:   geo.place_id,
-          zip_code:          geo.zip_code,
-          latitude:          geo.latitude,
-          longitude:         geo.longitude,
-        },
-        vehicle: {
-          color:         vehicleColor     || null,
-          license_plate: licensePlate     || null,
-          vehicle_type:  vehicleTypeValue || null,
-        },
-        request: {
-          service_request_number: srn,
-          package_id:             packageId,
-          special_notes:          notes,
-          requested_date:         requestedDate,
-          client_timezone:        Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        appointment: scheduledStart ? {
+          // Scheduling
           scheduled_start:       scheduledStart,
           scheduled_end:         scheduledEnd,
           preferred_time_window: timeWindow || null,
+
+          // Status — enters pipeline at first stage
+          appointment_status:    "Requested",
+
+          // Customer notes from form
           customer_notes:        notes || null,
-          weather_score:         weatherScore,
-        } : null,
-      },
-    });
 
-    if (bookingError || !booking) {
-      console.error("[JECS] create_booking failed — code:", bookingError?.code,
-        "| message:", bookingError?.message, "| details:", bookingError?.details);
-      setStatus(
-        "Submission failed. Please try again or call (615) 348-7683.",
-        "error"
-      );
-      setLoading(false);
-      return;
+          // Weather score from calendar session (if available)
+          weather_score: (() => {
+            try {
+              const forecast = JSON.parse(sessionStorage.getItem("jecs_forecast") || "{}");
+              const dayData  = forecast[requestedDate];
+              return dayData?.score ?? null;
+            } catch (_) { return null; }
+          })(),
+        });
+
+      if (apptError) {
+        console.error(
+          "[JECS] appointments insert failed",
+          "| code:", apptError?.code,
+          "| message:", apptError?.message,
+          "| details:", apptError?.details,
+          "| hint:", apptError?.hint
+        );
+        // Non-fatal — service request saved, but log clearly for admin visibility
+      } else {
+        console.info("[JECS] ✅ Appointment record created — SRN:", srn,
+          "| customer:", customerId,
+          "| vehicle:", vehicleId,
+          "| date:", requestedDate,
+          "| window:", timeWindow,
+          "| start:", scheduledStart
+        );
+      }
     }
-
-    console.info("[JECS] ✅ Booking created — SRN:", srn, "| request:", booking.request_id);
 
     // Notify weather-calendar.js to refresh slot counts
     document.dispatchEvent(new CustomEvent("jecs:submitted", {
@@ -628,12 +724,90 @@ if (form) {
       } catch (_) { /* non-fatal */ }
     }
 
+    // ── STEP 4b: T³ Payment Intent ────────────
+    // Fetch the appointment_id we just created
+    let appointmentId = null;
+    let paymentClientSecret = null;
+    let paymentIntentId     = null;
+
+    try {
+      const { data: apptRows } = await supabase
+        .from("appointments")
+        .select("appointment_id, scheduled_start")
+        .eq("service_request_id", requestId)
+        .limit(1);
+
+      appointmentId = apptRows?.[0]?.appointment_id || null;
+      const scheduledStart = apptRows?.[0]?.scheduled_start || null;
+
+      if (appointmentId && scheduledStart) {
+        // Determine lead time — >7 days = setup intent, ≤7 days = payment intent
+        const daysOut = Math.ceil(
+          (new Date(scheduledStart) - new Date()) / (1000 * 60 * 60 * 24)
+        );
+
+        // Get package price from loaded packages
+        const pkgData    = PACKAGES[service] || {};
+        const priceVal   = pkgData.price;
+        const amountCents = priceVal
+          ? Math.round(parseFloat(priceVal) * 100)
+          : 2500; // $25.00 fallback if price not loaded
+
+        setStatus("Securing your booking payment…");
+
+        const endpoint = daysOut > 7
+          ? `${T3_PAYMENT_WORKER_URL}/create-setup-intent`
+          : `${T3_PAYMENT_WORKER_URL}/create-payment-intent`;
+
+        const payRes = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            appointment_id:  appointmentId,
+            customer_id:     customerId,
+            amount_cents:    amountCents,
+            customer_email:  email,
+            customer_name:   name,
+            service_label:   pkgData.label || service,
+            scheduled_start: scheduledStart,
+          }),
+        });
+
+        const payData = await payRes.json();
+
+        if (payRes.ok && payData.client_secret) {
+          paymentClientSecret = payData.client_secret;
+          paymentIntentId     = payData.payment_intent_id || payData.setup_intent_id;
+          console.info("[JECS T³] Payment intent created:", paymentIntentId,
+            "| days out:", daysOut,
+            "| amount:", amountCents,
+            "| type:", daysOut > 7 ? "setup_intent" : "payment_intent"
+          );
+        } else {
+          // Non-fatal — booking is saved, payment will be handled manually
+          console.warn("[JECS T³] Payment intent failed:", payData.error);
+        }
+      }
+    } catch (payErr) {
+      // Non-fatal — booking record exists, flag for admin follow-up
+      console.warn("[JECS T³] Payment step error:", payErr.message);
+    }
+
     // ── STEP 5: Confirmation email ─────────────
     setStatus("Sending your confirmation email…");
     const emailResult = await sendConfirmationEmail({
       name, email, srn, service, vehicle,
       address, requestedDate, timeWindow, notes,
     });
+
+    // ── STEP 6: Update status ──────────────────
+    const finalStatus = emailResult.ok ? "confirmed" : "pending_confirmation";
+    try {
+      await supabase
+        .from("service_requests")
+        .update({ status: finalStatus })
+        .eq("request_id", requestId);
+    } catch (_) { /* non-fatal */ }
 
     // ── STEP 7: Success card ───────────────────
     const pkg           = PACKAGES[service] || {};
@@ -644,6 +818,9 @@ if (form) {
         })
       : "To be confirmed";
 
-    showSuccessCard({ name, srn, serviceLabel, formattedDate, timeWindow, address });
+    showSuccessCard({
+      name, srn, serviceLabel, formattedDate, timeWindow, address,
+      paymentSecured: !!paymentClientSecret,
+    });
   });
 }
