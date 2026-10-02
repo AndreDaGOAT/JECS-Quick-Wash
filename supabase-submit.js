@@ -242,7 +242,7 @@ function showSrnBanner(srn) {
 
 // !! UPDATE THIS after deploying the Worker !!
 // Copy the Worker URL from Cloudflare Workers dashboard
-const TURNSTILE_WORKER_URL = "https://jecs-turnstile-verify.YOUR-SUBDOMAIN.workers.dev";
+const TURNSTILE_WORKER_URL = "https://jecs-turnstile-verify.aarmstrong1234.workers.dev";
 
 async function verifyTurnstile(token) {
   if (!token) {
