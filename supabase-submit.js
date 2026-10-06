@@ -857,15 +857,29 @@ if (form) {
         );
 
         // Get package price — query Supabase directly using the UUID
-        // PACKAGES may be keyed by slug, not UUID, so query directly
         let amountCents = 2500; // $25.00 fallback
         let pkgLabel    = "Quick Wash";
         try {
-          const { data: pkgRow } = await supabase
+          // Try package_id column first, fall back to id column
+          let pkgRow = null;
+          const { data: r1, error: e1 } = await supabase
             .from("service_packages")
-            .select("package_name, price")
+            .select("package_name, price, package_id")
             .eq("package_id", service)
             .maybeSingle();
+
+          if (e1 || !r1) {
+            // Try with 'id' column name
+            const { data: r2 } = await supabase
+              .from("service_packages")
+              .select("package_name, price")
+              .eq("id", service)
+              .maybeSingle();
+            pkgRow = r2;
+          } else {
+            pkgRow = r1;
+          }
+
           if (pkgRow?.price) {
             amountCents = Math.round(parseFloat(pkgRow.price) * 100);
             pkgLabel    = pkgRow.package_name || pkgLabel;
@@ -915,8 +929,7 @@ if (form) {
           );
 
           // Get formatted date for modal display
-          const svcLabel2    = pkgLabel || "Quick Wash";
-          const fmtDate2     = requestedDate
+          const fmtDate2 = requestedDate
             ? new Date(requestedDate + "T12:00:00").toLocaleDateString("en-US", {
                 weekday: "long", year: "numeric", month: "long", day: "numeric",
               })
@@ -926,7 +939,7 @@ if (form) {
           setStatus("Please complete your secure payment…");
           const paymentSuccess = await showPaymentModal({
             clientSecret:  paymentClientSecret,
-            serviceLabel:  svcLabel2,
+            serviceLabel:  pkgLabel || "Quick Wash",
             formattedDate: fmtDate2,
             name,
             srn,
