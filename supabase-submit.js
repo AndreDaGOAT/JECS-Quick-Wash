@@ -866,24 +866,14 @@ if (form) {
           let pkgRow = null;
           const { data: r1, error: e1 } = await supabase
             .from("service_packages")
-            .select("package_name, price, package_id")
+            .select("package_name, base_price, package_id")
             .eq("package_id", service)
             .maybeSingle();
 
-          if (e1 || !r1) {
-            // Try with 'id' column name
-            const { data: r2 } = await supabase
-              .from("service_packages")
-              .select("package_name, price")
-              .eq("id", service)
-              .maybeSingle();
-            pkgRow = r2;
-          } else {
-            pkgRow = r1;
-          }
+          pkgRow = (!e1 && r1) ? r1 : null;
 
-          if (pkgRow?.price) {
-            amountCents = Math.round(parseFloat(pkgRow.price) * 100);
+          if (pkgRow?.base_price) {
+            amountCents = Math.round(parseFloat(pkgRow.base_price) * 100);
             pkgLabel    = pkgRow.package_name || pkgLabel;
           }
           console.info("[JECS T³] Package resolved:", pkgLabel, "| price cents:", amountCents);
