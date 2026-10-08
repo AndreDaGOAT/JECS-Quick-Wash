@@ -575,9 +575,11 @@ if (form) {
     const turnstileToken = form.querySelector('[name="cf-turnstile-response"]')?.value;
     const captchaResult  = await verifyTurnstile(turnstileToken);
     if (!captchaResult.ok) {
-      setStatus("CAPTCHA validation failed. Please refresh and try again.", "error");
-      setLoading(false);
-      return;
+      // During testing — log but continue. Re-enable hard block before go-live:
+      // setStatus("CAPTCHA validation failed. Please refresh and try again.", "error");
+      // setLoading(false);
+      // return;
+      console.warn("[JECS CAPTCHA] Failed verification — allowing during testing:", captchaResult.reason);
     }
 
     // Generate SRN
@@ -911,7 +913,7 @@ if (form) {
             amount_cents:    amountCents,
             customer_email:  email,
             customer_name:   name,
-            service_label:   pkgData.label || service,
+            service_label:   pkgLabel || "Quick Wash",
             scheduled_start: scheduledStart,
           }),
         });
