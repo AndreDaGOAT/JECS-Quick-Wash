@@ -23,7 +23,7 @@ const T3_PAYMENT_WORKER_URL = "https://jecs-t3-payment.aarmstrong1234.workers.de
 // ── Stripe Publishable Key ────────────────────
 // Use pk_test_... for sandbox, pk_live_... for production
 // This key is safe to expose in client-side code
-const STRIPE_PUBLISHABLE_KEY = "pk_test_51ULv2vDdUitKKphkZHRSuk8ygRL8G3Kn2MWHB1Et8iN7rH8JMHmk5G8mpfNxsdm8bkRfLpA1jKaOMtuIZCiUHejD00VTPwfeZ4";
+const STRIPE_PUBLISHABLE_KEY = "pk_test_51ULrtaRnuaCHucjeUtscDJfURmW2AXKOtzJP3rRTykiBeG214JfPTgCCUJgCcZcrjbP46lWn5XO2xK0T8FLXFxm100R1w82w2v";
 
 // ── Show Stripe payment modal ─────────────────
 // Called after booking is saved and Worker returns client_secret
@@ -913,6 +913,10 @@ if (form) {
         if (payRes.ok && payData.client_secret) {
           paymentClientSecret = payData.client_secret;
           paymentIntentId     = payData.payment_intent_id || payData.setup_intent_id;
+
+          // DEBUG — remove after confirming client_secret is the full seti_xxx_secret_yyy string
+          console.info("[JECS T³] DEBUG client_secret:", paymentClientSecret);
+          console.info("[JECS T³] DEBUG full payData:", JSON.stringify(payData));
 
           console.info("[JECS T³] Payment intent created:", paymentIntentId,
             "| days out:", daysOut,
