@@ -417,10 +417,25 @@ const SERVICE_PACKAGE_MAP = {
 };
 
 async function resolvePackageId(serviceValue) {
+  async function resolvePackageId(serviceValue) {
   if (!serviceValue) return null;
 
-  // Always look up by name — stub values like "package-uuid-0002"
-  // are NOT real UUIDs and will cause a Postgres type error if inserted.
+  // The dropdown is filled from Supabase, so its value is normally a real
+  // package ID. Confirm it exists and is active, then use it as is.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (UUID_RE.test(serviceValue)) {
+    const { data, error } = await supabase
+      .from("service_packages")
+      .select("package_id")
+      .eq("package_id", serviceValue)
+      .eq("active", true)
+      .maybeSingle();
+    if (!error && data) return data.package_id;
+    console.warn("[JECS] Package ID not found or inactive:", serviceValue);
+    return null;
+  }
+
+  // Fallback for the hardcoded options: look the package up by name.
   const packageName = SERVICE_PACKAGE_MAP[serviceValue];
   if (!packageName) {
     console.warn("[JECS] No package name mapping for value:", serviceValue);
@@ -431,18 +446,16 @@ async function resolvePackageId(serviceValue) {
     .from("service_packages")
     .select("package_id")
     .eq("package_name", packageName)
-    .maybeSingle(); // maybeSingle returns null instead of error when no row found
+    .maybeSingle();
 
   if (error) {
     console.warn("[JECS] package lookup error:", error.code, error.message);
     return null;
   }
   if (!data) {
-    console.warn("[JECS] No row found in service_packages for name:", packageName,
-      "— insert will proceed with package_id = null.");
+    console.warn("[JECS] No row found in service_packages for name:", packageName);
     return null;
   }
-
   return data.package_id;
 }
 
