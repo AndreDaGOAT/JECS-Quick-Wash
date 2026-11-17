@@ -416,7 +416,6 @@ const SERVICE_PACKAGE_MAP = {
   "fleet":             "Fleet & Commercial",
 };
 
-async function resolvePackageId(serviceValue) {
   async function resolvePackageId(serviceValue) {
   if (!serviceValue) return null;
 
